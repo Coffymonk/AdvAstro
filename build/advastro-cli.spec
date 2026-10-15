@@ -2,9 +2,12 @@
 # Used by build/build.py; run that script rather than this file directly.
 # -*- mode: python -*-
 
+import sys
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules, copy_metadata
+sys.path.insert(0, str(Path(SPECPATH)))  # noqa: F821
+from specutil import clean_metadata  # noqa: E402
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 ROOT = Path(SPECPATH).parent  # noqa: F821  (SPECPATH is set by PyInstaller)
 
@@ -14,11 +17,7 @@ _METADATA = ["advastro-analyzer", "numpy", "scipy", "astropy", "photutils", "pye
              "astropy-iers-data", "packaging", "PyYAML",
              "tifffile", "imagecodecs", "pillow"]
 datas = collect_data_files("advastro")  # defaults.toml and translations
-for _dist in _METADATA:
-    try:
-        datas += copy_metadata(_dist)
-    except Exception:  # an optional dependency that is not installed
-        pass
+datas += clean_metadata(_METADATA)  # without direct_url.json (local paths)
 
 a = Analysis(  # noqa: F821
     [str(ROOT / "build" / "entry_cli.py")],

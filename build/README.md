@@ -46,6 +46,20 @@ is a standard installer wizard that puts the app in `/Applications`
 
 Use `--no-installer` to skip them.
 
+## User manual as PDF
+
+`python build/make_manual.py` writes the manual in English and Swedish to
+`dist/AdvancedAstrophotoAnalyzer-<version>-manual-en.pdf` and `…-sv.pdf`, with a cover,
+contents and page numbers. It uses the same text as the manual in the app
+(`src/advastro/help/`). It needs `pip install markdown playwright` and
+`python -m playwright install chromium` once. The release workflow does this for you.
+
+## Privacy check
+
+Every build is checked for the build computer's home folder and user name (including inside
+the packed executables), and stops if they turn up. The package metadata is bundled without
+`direct_url.json`, which pip fills with the local source folder.
+
 ## Requirements
 
 - Python 3.12 or newer
@@ -95,6 +109,8 @@ added to `build.py` later without changing anything else.
 | `advastro-gui.spec` | PyInstaller recipe for the desktop app (folder build; `.app` on macOS) |
 | `advastro-cli.spec` | PyInstaller recipe for the command-line executable |
 | `entry_gui.py`, `entry_cli.py` | Entry points bundled into the app and the tool |
+| `make_manual.py` | The user manual as PDF files |
+| `specutil.py` | Helpers for the spec files (package metadata without local paths) |
 | `installer/windows/AdvAstro.iss` | Inno Setup script for the Windows installer |
 | `icons/` | App icon: `src/*.svg` drawings, `png/` at 16–1024 px, `.ico` (Windows), `.icns` (macOS), `advastro.svg` (Linux). Regenerate with `python build/icons/make_icons.py` |
 | `hooks/` | PyInstaller hooks for astropy and photutils |

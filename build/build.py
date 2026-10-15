@@ -177,6 +177,76 @@ def collect_licenses(dest: Path, gui: bool) -> Path:
     return lic
 
 
+SYSTEM_ACCOUNTS = ("root", "runner", "runneradmin", "builder")
+
+
+def private_strings() -> list[bytes]:
+    """The source folder, home folder and user name of this machine, as they could appear
+    inside a build. Shared system and CI accounts (root, runner) are not personal and are
+    left out: library wheels are often built under /root."""
+    texts = {str(ROOT), ROOT.as_posix()}
+    home = Path.home()
+    if home.name.lower() not in SYSTEM_ACCOUNTS:
+        texts |= {str(home), home.as_posix()}
+        if len(home.name) >= 4:
+            texts |= {f"Users/{home.name}", f"Users\\{home.name}", f"home/{home.name}"}
+    out = []
+    for t in texts:
+        out += [t.encode("utf-8"), t.encode("utf-16-le")]
+        if "\\" in t:
+            out.append(t.replace("\\", "\\\\").encode("utf-8"))   # escaped, as in JSON
+    return out
+
+
+def check_private(paths: list[Path]) -> None:
+    """Stop the build if a file in it contains this machine's home folder or user name."""
+    step("Privacy check (no local paths or user name in the build)")
+    needles = private_strings()
+    bad = []
+    for root in paths:
+        files = [root] if root.is_file() else [f for f in root.rglob("*") if f.is_file()]
+        for f in files:
+            data = f.read_bytes()
+            if any(n in data for n in needles):
+                bad.append(str(f))
+            if f.suffix.lower() in (".exe", "") and data[:4] in (b"MZ\x90\x00", b"\x7fELF") \
+                    or f.parent.name == "MacOS":
+                bad += [f"{f} > {h}" for h in _exe_private_hits(f, needles)]
+    if bad:
+        raise SystemExit("Build stopped: these files contain your home folder or user name:\n  "
+                         + "\n  ".join(bad[:20]))
+    print("  clean")
+
+
+def _exe_private_hits(exe: Path, needles: list[bytes]) -> list[str]:
+    """Files packed (compressed) inside a PyInstaller executable that contain a needle."""
+    import tempfile
+
+    from PyInstaller.archive.readers import CArchiveReader, ZlibArchiveReader
+
+    try:
+        reader = CArchiveReader(str(exe))
+    except Exception:          # not a PyInstaller executable
+        return []
+    bad = []
+    for name in reader.toc:
+        data = reader.extract(name)
+        if not data:
+            continue
+        if name.endswith(".pyz"):  # the compiled Python modules, each compressed on its own
+            with tempfile.TemporaryDirectory() as tmp:
+                pyz = Path(tmp) / "x.pyz"
+                pyz.write_bytes(data)
+                zr = ZlibArchiveReader(str(pyz))
+                for mod in zr.toc:
+                    code = zr.extract(mod, raw=True)
+                    if code and any(n in code for n in needles):
+                        bad.append(f"{name}:{mod}")
+        elif any(n in data for n in needles):
+            bad.append(name)
+    return bad
+
+
 def pyinstaller(spec: str, out_dir: Path) -> None:
     run([sys.executable, "-m", "PyInstaller", str(BUILD / spec), "--noconfirm",
          "--distpath", str(out_dir), "--workpath", str(WORK)])
@@ -190,6 +260,7 @@ def build_cli(out_dir: Path, ver: str, tag: str) -> Path:
         raise SystemExit(f"Build failed: {exe} was not created.")
     step("Smoke test: command-line tool")
     run([str(exe), "--version"])
+    check_private([exe])
 
     base = f"advastro-cli-{ver}-{tag}"
     extras = [ROOT / "LICENSE", ROOT / "README.md", ROOT / "CREDITS.md"]
@@ -227,6 +298,7 @@ def build_gui(out_dir: Path, ver: str, tag: str) -> Path:
 
     step("Smoke test: desktop app (opens and closes the main window off-screen)")
     run([str(exe), "--smoke-test"])
+    check_private([app_dir])
 
     # Licences next to the program (inside Contents/Resources on macOS).
     collect_licenses(app_dir / "Contents" / "Resources" if sys.platform == "darwin" else app_dir,

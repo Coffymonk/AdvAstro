@@ -36,6 +36,12 @@ jobs:
         run: python build/build.py
         env:
           QT_QPA_PLATFORM: offscreen
+      - name: User manual as PDF (English and Swedish)
+        if: runner.os == 'Linux'
+        run: |
+          python -m pip install markdown playwright
+          python -m playwright install --with-deps chromium
+          python build/make_manual.py
       - uses: actions/upload-artifact@v4
         with:
           name: advastro-${{ matrix.name }}
@@ -45,6 +51,7 @@ jobs:
             dist/*.exe
             dist/*.dmg
             dist/*.pkg
+            dist/*.pdf
           if-no-files-found: error
 
   release:

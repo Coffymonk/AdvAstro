@@ -9,6 +9,12 @@
   Free analyzer and advisor for deep-sky astrophotography · Windows · macOS · Linux
 </p>
 
+<p align="center">
+  Version <b>0.1.0.dev0</b> (development preview) ·
+  <a href="https://github.com/Coffymonk/AdvAstro/releases">Download</a> ·
+  <a href="https://github.com/Coffymonk/AdvAstro/releases">User manual (PDF, English and Swedish)</a>
+</p>
+
 Advanced Astrophoto Analyzer (AdvAstro for short) looks at your astro imaging data and tells
 you, with your own numbers, what is good, what is not and what to do about it. It measures
 every sub, finds the bad ones and explains why, checks your calibration frames, identifies

@@ -8,7 +8,9 @@
 import sys
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules, copy_metadata
+sys.path.insert(0, str(Path(SPECPATH)))  # noqa: F821
+from specutil import clean_metadata  # noqa: E402
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 ROOT = Path(SPECPATH).parent  # noqa: F821  (SPECPATH is set by PyInstaller)
 ICONS = ROOT / "build" / "icons"
@@ -17,11 +19,7 @@ _METADATA = ["advastro-analyzer", "numpy", "scipy", "astropy", "photutils", "pye
              "astropy-iers-data", "packaging", "PyYAML",
              "tifffile", "imagecodecs", "pillow"]
 datas = collect_data_files("advastro")
-for _dist in _METADATA:
-    try:
-        datas += copy_metadata(_dist)
-    except Exception:
-        pass
+datas += clean_metadata(_METADATA)  # without direct_url.json (local paths)
 
 # Qt modules the app does not use; leaving them out saves a lot of space.
 _QT_UNUSED = ["QtWebEngineCore", "QtWebEngineWidgets", "QtWebEngineQuick", "QtWebChannel",

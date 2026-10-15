@@ -46,3 +46,12 @@ def test_search_finds_sections():
     hits = [s.id for _, s in manual.search("walking noise")]
     assert "finding.walking_noise" in hits
     assert manual.search("   ") == []
+
+
+def test_readme_shows_the_current_version():
+    from pathlib import Path
+
+    from advastro import __version__
+
+    readme = (Path(__file__).resolve().parent.parent / "README.md").read_text(encoding="utf-8")
+    assert f"Version <b>{__version__}</b>" in readme, "update the version line in README.md"
