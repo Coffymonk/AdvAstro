@@ -246,7 +246,8 @@ class MainWindow(QMainWindow):
         tb.addAction(self.act_night)
         self.help_menu = QMenu(self)
         for key, topic in (("manual", None), ("start", "start"), ("rate", "rate"),
-                           ("shortcuts", "reference.shortcuts"), ("faq", "reference.faq")):
+                           ("shortcuts", "reference.shortcuts"), ("faq", "reference.faq"),
+                           ("credits", "credits")):
             act = self.help_menu.addAction(tr(f"gui.help.{key}"))
             act.triggered.connect(lambda _=False, tp=topic: self.show_help(tp))
             if key == "manual":

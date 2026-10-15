@@ -230,6 +230,18 @@ def depth_and_colour(m: Measurements, field_: SkyField, progress=None
 
 
 # ---------------------------------------------------------------------------- survey image
+GAIA_CREDIT = "Gaia DR3: ESA/Gaia/DPAC, via VizieR (CDS, Strasbourg)"
+SURVEY_CREDITS = {
+    "DSS2 colour": "DSS2: STScI / Palomar & UK Schmidt telescopes, via CDS hips2fits",
+    "Pan-STARRS DR1": "Pan-STARRS1 Surveys (PS1), via CDS hips2fits",
+    "Mellinger all-sky": "© Axel Mellinger, via CDS hips2fits",
+}
+
+
+def survey_credit(name: str | None) -> str:
+    return SURVEY_CREDITS.get(name or "", "via CDS hips2fits")
+
+
 def survey_for(field_: SkyField) -> tuple[str, str]:
     if field_.width_deg > 12:
         return "CDS/P/Mellinger/color", "Mellinger all-sky"

@@ -321,11 +321,23 @@ sending a pull request.
 
 ## Credits
 
-- Deep-sky catalog: [OpenNGC](https://github.com/mattiaverga/OpenNGC) by Mattia Verga,
-  CC BY-SA 4.0 (see `src/advastro/data/OPENNGC.md`).
-- Built on Astropy, photutils, NumPy, SciPy and Qt for Python (PySide6).
+AdvAstro is built on [Qt for Python](https://www.qt.io/qt-for-python) (LGPL-3.0),
+[NumPy](https://numpy.org), [SciPy](https://scipy.org), [Astropy](https://www.astropy.org),
+[photutils](https://photutils.readthedocs.io), [Pillow](https://python-pillow.org),
+[tifffile and imagecodecs](https://github.com/cgohlke) and more. It uses the
+[OpenNGC](https://github.com/mattiaverga/OpenNGC) catalogue by Mattia Verga (CC BY-SA 4.0),
+data from the ESA mission *Gaia* (processed by DPAC) through CDS VizieR, sky survey images
+(DSS2, Pan-STARRS, Mellinger) through CDS hips2fits, and [ASTAP](https://www.hnsky.org/astap.htm)
+by Han Kleijn for plate solving.
+
+The full list, with every licence and the acknowledgements the data providers ask for, is in
+**[CREDITS.md](CREDITS.md)**, and in the app under *Help › Credits and licences*. Every build
+ships the licence texts of all bundled libraries in its `licenses` folder.
+
+All product names and trademarks (PixInsight, Siril, AstroBin, ASIAIR and others) belong to
+their owners; AdvAstro is an independent project and not affiliated with them.
 
 ## Licence
 
 Copyright © 2026 Miklosoft. Released under the GNU General Public License v3.0.
-See [LICENSE](LICENSE).
+See [LICENSE](https://github.com/Coffymonk/AdvAstro/blob/main/LICENSE) in the AdvAstro repository on GitHub.

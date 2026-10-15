@@ -233,7 +233,11 @@ class HelpWindow(QMainWindow):
             block = block.next()
         sb = self.browser.verticalScrollBar()
         if not block.isValid() or level == 1:
+            top = self.browser.textCursor()
+            top.setPosition(0)
+            self.browser.setTextCursor(top)
             sb.setValue(0)
+            QTimer.singleShot(0, lambda: sb.setValue(0))   # again after layout
             return
         cursor = self.browser.textCursor()
         cursor.setPosition(block.position())

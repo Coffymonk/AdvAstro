@@ -111,6 +111,50 @@ def main() -> int:
     return 0
 
 
+# Distributions bundled into the executables; their licence files travel with every build.
+BUNDLED = ["numpy", "scipy", "astropy", "pyerfa", "astropy-iers-data", "photutils", "pillow",
+           "tifffile", "imagecodecs", "lz4", "zstandard", "PyYAML", "packaging"]
+LICENSE_WORDS = ("LICENSE", "LICENCE", "COPYING", "NOTICE", "AUTHORS")
+
+
+def collect_licenses(dest: Path, gui: bool) -> Path:
+    """Copy CREDITS, our licence and every bundled library's licence files into dest/licenses."""
+    from importlib import metadata
+
+    lic = dest / "licenses"
+    if lic.exists():
+        shutil.rmtree(lic)
+    lic.mkdir(parents=True)
+    shutil.copy(ROOT / "LICENSE", lic / "AdvAstro-GPL-3.0.txt")
+    shutil.copy(ROOT / "CREDITS.md", lic / "CREDITS.md")
+    shutil.copy(ROOT / "src" / "advastro" / "data" / "OPENNGC.md", lic / "OpenNGC-CC-BY-SA-4.0.md")
+    names = BUNDLED + (["PySide6-Essentials", "shiboken6"] if gui else [])
+    for name in names:
+        try:
+            dist = metadata.distribution(name)
+        except metadata.PackageNotFoundError:
+            continue
+        target = lic / f"{name}-{dist.version}"
+        for f in dist.files or []:
+            if any(w in f.name.upper() for w in LICENSE_WORDS):
+                src = Path(dist.locate_file(f))
+                if src.is_file():
+                    target.mkdir(exist_ok=True)
+                    # Keep the sub-path: several vendored parts use the same file name.
+                    flat = str(f).replace("/", "_").replace("\\", "_")
+                    shutil.copy(src, target / flat)
+        meta = dist.metadata
+        if not target.exists():           # no licence file shipped: record what the metadata says
+            target.mkdir()
+            licence = meta.get("License-Expression") or meta.get("License")
+            (target / "LICENSE-INFO.txt").write_text(
+                f"{name} {dist.version}\nLicence: {licence}\nHome: {meta.get('Home-page') or ''}\n",
+                encoding="utf-8")
+    if gui:                                # Qt for Python: LGPL-3.0
+        shutil.copy(ROOT / "licenses" / "LGPL-3.0.txt", lic / "Qt-LGPL-3.0.txt")
+    return lic
+
+
 def pyinstaller(spec: str, out_dir: Path) -> None:
     run([sys.executable, "-m", "PyInstaller", str(BUILD / spec), "--noconfirm",
          "--distpath", str(out_dir), "--workpath", str(WORK)])
@@ -126,19 +170,23 @@ def build_cli(out_dir: Path, ver: str, tag: str) -> Path:
     run([str(exe), "--version"])
 
     base = f"advastro-cli-{ver}-{tag}"
-    extras = [ROOT / "LICENSE", ROOT / "README.md"]
+    extras = [ROOT / "LICENSE", ROOT / "README.md", ROOT / "CREDITS.md"]
+    lic = collect_licenses(out_dir / "cli-licenses", gui=False)
     if sys.platform == "win32":
         archive = DIST / f"{base}.zip"
         with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
             zf.write(exe, f"{base}/{exe.name}")
             for f in extras:
                 zf.write(f, f"{base}/{f.name}")
+            for f in lic.rglob("*"):
+                zf.write(f, f"{base}/licenses/{f.relative_to(lic)}")
     else:
         archive = DIST / f"{base}.tar.gz"
         with tarfile.open(archive, "w:gz") as tf:
             tf.add(exe, f"{base}/{exe.name}")  # keeps the executable bit
             for f in extras:
                 tf.add(f, f"{base}/{f.name}")
+            tf.add(lic, f"{base}/licenses")
     return archive
 
 
@@ -157,6 +205,10 @@ def build_gui(out_dir: Path, ver: str, tag: str) -> Path:
 
     step("Smoke test: desktop app (opens and closes the main window off-screen)")
     run([str(exe), "--smoke-test"])
+
+    # Licences next to the program (inside Contents/Resources on macOS).
+    collect_licenses(app_dir / "Contents" / "Resources" if sys.platform == "darwin" else app_dir,
+                     gui=True)
 
     base = f"advastro-app-{ver}-{tag}"
     if sys.platform == "darwin":

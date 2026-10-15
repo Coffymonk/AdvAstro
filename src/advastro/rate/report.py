@@ -175,8 +175,15 @@ def to_html(r: Rating, images: dict[str, str] | None = None, accent: str = "#2a6
             out.append(f"<p>Star colours vs Gaia: r = {s.colour.r:.2f} "
                        f"({s.colour.stars} stars)</p>")
         if images and images.get("survey"):
+            from advastro.rate.sky import survey_credit
+
             out.append(f"<p>{e(s.survey_name or 'Survey')} view of the same field:<br>"
-                       f'<img src="{images["survey"]}" width="640"></p>')
+                       f'<img src="{images["survey"]}" width="640"><br>'
+                       f"<span class='muted'>Image: {e(survey_credit(s.survey_name))}</span></p>")
+        if s.depth or s.colour:
+            from advastro.rate.sky import GAIA_CREDIT
+
+            out.append(f"<p class='muted'>Star data: {e(GAIA_CREDIT)}.</p>")
         for k, v in s.errors.items():
             out.append(f"<p class='muted'>{e(k)}: {e(v)}</p>")
     out.append("<h2>Measurements</h2><table cellspacing='0'>")

@@ -58,6 +58,7 @@ from advastro.gui.widgets import ElidedLabel, PreviewView
 from advastro.help import finding_topic
 from advastro.i18n import tr
 from advastro.rate.picture import SUPPORTED
+from advastro.rate.sky import GAIA_CREDIT, survey_credit
 
 PREVIEW_MAX = 2400
 OVERLAYS = ("none", "stars", "background", "noise", "cast", "clipping", "problems")
@@ -995,17 +996,21 @@ class RateWindow(QMainWindow):
                 chart.theme = t
                 chart.set(sky.depth.completeness, lim)
                 v.addWidget(chart)
+                v.addWidget(_label(GAIA_CREDIT, "statLabel"))
                 lay.addWidget(card)
             if sky.colour:
                 card, v = _card(t)
                 v.addWidget(_label(f"<b>{tr('rate.colour_truth')}</b>"))
                 v.addWidget(_label(tr("rate.colour_text", r=f"{sky.colour.r:.2f}",
                                       n=sky.colour.stars), "statLabel"))
+                v.addWidget(_label(GAIA_CREDIT, "statLabel"))
                 lay.addWidget(card)
             if sky.survey is not None:
                 card, v = _card(t)
                 v.addWidget(_label(f"<b>{tr('rate.survey', name=sky.survey_name)}</b>"))
                 v.addWidget(_label(tr("rate.survey_text"), "statLabel"))
+                v.addWidget(_label(tr("rate.credit", source=survey_credit(sky.survey_name)),
+                                   "statLabel"))
                 row = QHBoxLayout()
                 slider = QSlider(Qt.Orientation.Horizontal)
                 slider.setRange(0, 100)
