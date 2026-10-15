@@ -4,14 +4,26 @@
 <!-- id: start.install -->
 ## Installation
 
-Ladda ner paketet för ditt system från <https://miklosoft.se/main> eller GitHubs
-release-sida, packa upp det och starta **Advanced Astrophoto Analyzer**.
+Ladda ner installationsprogrammet för ditt system från <https://miklosoft.se/main> eller
+GitHubs release-sida:
 
-Paketen är ännu inte kodsignerade:
+- **Windows 10/11**: kör `AdvancedAstrophotoAnalyzer-…-windows-x64-setup.exe`. Det
+  installerar programmet under *Program Files* (eller bara för dig, om du väljer det),
+  lägger det i Start-menyn, kan skapa en genväg på skrivbordet och kan lägga
+  kommandoradsverktyget `advastro` i PATH. Avinstallera under *Inställningar › Appar*.
+- **macOS (Apple Silicon)**: öppna `AdvancedAstrophotoAnalyzer-…-macos-arm64.dmg` och dra
+  **Advanced Astrophoto Analyzer** till mappen *Program*. Vill du hellre ha en
+  installationsguide? Använd `.pkg`-filen; den lägger appen i *Program* åt dig.
+- **Linux**: packa upp `.tar.gz`-filen och starta **Advanced Astrophoto Analyzer** i mappen.
+
+Det finns också zip-filer med appen om du hellre vill slippa installera något.
+
+Installationsprogrammen är ännu inte kodsignerade:
 
 - **Windows**: om SmartScreen varnar, klicka *Mer information › Kör ändå*.
-- **macOS**: om macOS vägrar öppna appen, öppna *Systeminställningar › Integritet och
-  säkerhet* och välj *Öppna ändå*.
+- **macOS**: om macOS vägrar öppna appen eller `.pkg`-filen, öppna *Systeminställningar ›
+  Integritet och säkerhet* och välj *Öppna ändå* (eller högerklicka på filen och välj
+  *Öppna*).
 
 <!-- id: start.astap -->
 ## Ställa in plattlösning (valfritt)

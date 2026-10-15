@@ -17,12 +17,22 @@ Output:
     dist/<platform>/Advanced Astrophoto Analyzer[.app]               desktop app
     dist/advastro-cli-<version>-<platform>.zip|.tar.gz    ready to upload
     dist/advastro-app-<version>-<platform>.zip|.tar.gz    ready to upload
+
+Installers (made automatically after the app is built; --no-installer skips them):
+    Windows  dist/AdvancedAstrophotoAnalyzer-<version>-windows-x64-setup.exe
+             (needs Inno Setup 6: winget install JRSoftware.InnoSetup)
+    macOS    dist/AdvancedAstrophotoAnalyzer-<version>-macos-arm64.dmg  (drag to Applications)
+             dist/AdvancedAstrophotoAnalyzer-<version>-macos-arm64.pkg  (installer wizard)
+             (uses hdiutil and pkgbuild, which come with macOS)
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import platform
+import plistlib
+import re
 import shutil
 import subprocess
 import sys
@@ -35,6 +45,9 @@ BUILD = ROOT / "build"
 WORK = BUILD / "work"  # PyInstaller temporary files (ignored by Git)
 DIST = ROOT / "dist"
 MIN_PYTHON = (3, 12)
+APP_NAME = "Advanced Astrophoto Analyzer"
+INSTALLER_BASE = "AdvancedAstrophotoAnalyzer"
+BUNDLE_ID = "se.miklosoft.advastro"
 
 
 def platform_tag() -> str:
@@ -69,6 +82,8 @@ def main() -> int:
     ap.add_argument("--clean", action="store_true", help="delete earlier build output first")
     ap.add_argument("--only", choices=["all", "cli", "gui"], default="all",
                     help="build only the command-line tool or only the desktop app")
+    ap.add_argument("--no-installer", action="store_true",
+                    help="skip the Windows Setup.exe / macOS .dmg and .pkg")
     args = ap.parse_args()
 
     if sys.version_info < MIN_PYTHON:
@@ -101,13 +116,20 @@ def main() -> int:
         packages.append(build_cli(out_dir, ver, tag))
     if "gui" in targets:
         packages.append(build_gui(out_dir, ver, tag))
+        if not args.no_installer:
+            if sys.platform == "win32":
+                packages += build_windows_installer(out_dir, ver, tag)
+            elif sys.platform == "darwin":
+                packages += build_macos_installers(out_dir, ver, tag)
 
     print("\nDone.")
     for archive in packages:
         print(f"  {archive.name}  ({archive.stat().st_size / 1e6:.0f} MB)  in {archive.parent}")
     if sys.platform == "darwin":
-        print("  Unsigned: open the app with right-click > Open the first time, or allow it "
-              "under System Settings > Privacy & Security.")
+        print("  Unsigned: open the app (or the .pkg) with right-click > Open the first time, "
+              "or allow it under System Settings > Privacy & Security.")
+    elif sys.platform == "win32":
+        print("  Unsigned: in the SmartScreen dialog choose More info > Run anyway.")
     return 0
 
 
@@ -193,7 +215,7 @@ def build_cli(out_dir: Path, ver: str, tag: str) -> Path:
 def build_gui(out_dir: Path, ver: str, tag: str) -> Path:
     step("Building the desktop app")
     pyinstaller("advastro-gui.spec", out_dir)
-    name = "Advanced Astrophoto Analyzer"
+    name = APP_NAME
     if sys.platform == "darwin":
         app_dir = out_dir / f"{name}.app"
         exe = app_dir / "Contents" / "MacOS" / name
@@ -226,6 +248,91 @@ def build_gui(out_dir: Path, ver: str, tag: str) -> Path:
         with tarfile.open(archive, "w:gz") as tf:
             tf.add(app_dir, name)
     return archive
+
+
+def numeric_version(ver: str) -> str:
+    """'0.1.0.dev0' -> '0.1.0.0': the four plain numbers Windows wants."""
+    nums = [int(n) for n in re.findall(r"\d+", ver.split("dev")[0].split("rc")[0])][:4]
+    return ".".join(str(n) for n in (nums + [0, 0, 0, 0])[:4])
+
+
+def find_iscc() -> Path | None:
+    """Inno Setup's compiler: on PATH, or in its usual install folders."""
+    found = shutil.which("iscc") or shutil.which("ISCC.exe")
+    if found:
+        return Path(found)
+    roots = [os.environ.get(k) for k in ("ProgramFiles(x86)", "ProgramFiles", "LOCALAPPDATA")]
+    for root in filter(None, roots):
+        for sub in ("Inno Setup 6", r"Programs\Inno Setup 6"):
+            exe = Path(root) / sub / "ISCC.exe"
+            if exe.is_file():
+                return exe
+    return None
+
+
+def build_windows_installer(out_dir: Path, ver: str, tag: str) -> list[Path]:
+    step("Windows installer (Inno Setup)")
+    iscc = find_iscc()
+    if iscc is None:
+        print("  Inno Setup 6 was not found, so no Setup.exe this time (the zip is still made).\n"
+              "  Install it once with:  winget install JRSoftware.InnoSetup\n"
+              "  or from https://jrsoftware.org/isdl.php, then build again.")
+        return []
+    name = f"{INSTALLER_BASE}-{ver}-{tag}-setup"
+    cmd = [str(iscc), "/Qp",
+           f"/DAppVersion={ver}", f"/DNumericVersion={numeric_version(ver)}",
+           f"/DAppDir={out_dir / APP_NAME}", f"/DRootDir={ROOT}",
+           f"/DOutputDir={DIST}", f"/DOutputName={name}"]
+    cli = out_dir / "advastro.exe"
+    if cli.is_file():
+        cmd.append(f"/DCliExe={cli}")
+    cmd.append(str(BUILD / "installer" / "windows" / "AdvAstro.iss"))
+    run(cmd)
+    setup = DIST / f"{name}.exe"
+    if not setup.is_file():
+        raise SystemExit(f"Installer failed: {setup} was not created.")
+    return [setup]
+
+
+def build_macos_installers(out_dir: Path, ver: str, tag: str) -> list[Path]:
+    """A drag-to-Applications disk image and a standard installer package."""
+    app = out_dir / f"{APP_NAME}.app"
+    stage = WORK / "macos-installer"
+    shutil.rmtree(stage, ignore_errors=True)
+    made = []
+
+    step("macOS disk image (.dmg)")
+    dmg_root = stage / "dmg"
+    dmg_root.mkdir(parents=True)
+    # ditto copies the bundle with its symlinks, permissions and extended attributes.
+    run(["ditto", str(app), str(dmg_root / app.name)])
+    (dmg_root / "Applications").symlink_to("/Applications")
+    shutil.copy(ROOT / "LICENSE", dmg_root / "LICENSE.txt")
+    dmg = DIST / f"{INSTALLER_BASE}-{ver}-{tag}.dmg"
+    dmg.unlink(missing_ok=True)
+    run(["hdiutil", "create", "-volname", APP_NAME, "-srcfolder", str(dmg_root),
+         "-fs", "HFS+", "-format", "UDZO", "-imagekey", "zlib-level=9", "-ov", str(dmg)])
+    made.append(dmg)
+
+    step("macOS installer package (.pkg)")
+    pkg_root = stage / "pkg"
+    pkg_root.mkdir(parents=True)
+    run(["ditto", str(app), str(pkg_root / app.name)])
+    plist = stage / "component.plist"
+    run(["pkgbuild", "--analyze", "--root", str(pkg_root), str(plist)])
+    with open(plist, "rb") as fh:
+        comps = plistlib.load(fh)
+    for c in comps:                 # always install into /Applications, never "move" an old copy
+        c["BundleIsRelocatable"] = False
+    with open(plist, "wb") as fh:
+        plistlib.dump(comps, fh)
+    pkg = DIST / f"{INSTALLER_BASE}-{ver}-{tag}.pkg"
+    pkg.unlink(missing_ok=True)
+    run(["pkgbuild", "--root", str(pkg_root), "--component-plist", str(plist),
+         "--install-location", "/Applications", "--identifier", BUNDLE_ID,
+         "--version", numeric_version(ver), str(pkg)])
+    made.append(pkg)
+    return made
 
 
 if __name__ == "__main__":

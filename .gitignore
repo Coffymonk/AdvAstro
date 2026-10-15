@@ -37,6 +37,8 @@ build/*.log
 dist/
 *.exe
 *.dmg
+*.pkg
+*.msi
 *.app/
 *.zip
 *.tar.gz

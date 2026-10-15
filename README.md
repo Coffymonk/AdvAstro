@@ -284,7 +284,11 @@ See [build/README.md](build/README.md). In short, from the repository folder:
 - macOS: `./build/build_macos.sh`
 - Linux: `./build/build_linux.sh`
 
-Each script runs the tests, builds the executable and packages it into `dist/`.
+Each script runs the tests, builds the executable, checks that it starts and packages it
+into `dist/`. On Windows it also makes a **Setup.exe installer** (with the free
+[Inno Setup](https://jrsoftware.org/isinfo.php); the script offers to install it), and on
+macOS a **drag-to-Applications `.dmg`** and an **installer `.pkg`** (with tools that come
+with macOS).
 Pushing a version tag such as `v0.1.0` makes GitHub Actions build all three and
 publish a release with the source code.
 
@@ -306,8 +310,8 @@ Next:
    real sessions.
 3. More tools (GraXpert, Astro Pixel Processor, DeepSkyStacker) and multi-filter sessions
    (LRGB, SHO).
-4. ASTAP installer from within the app, language editor, community translations, signed
-   installers, screenshots in the manual.
+4. ASTAP installer from within the app, language editor, community translations, code-signed
+   installers, a Linux AppImage.
 
 ## Translations
 
