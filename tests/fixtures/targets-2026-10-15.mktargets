@@ -1,0 +1,50 @@
+{
+  "app": "miklosoft-targets",
+  "version": 1,
+  "saved": "2026-10-15T13:26:26.866Z",
+  "targets": [
+    {
+      "id": "NGC 7380",
+      "name": "The Wizard Nebula",
+      "ids": [
+        "NGC 7380",
+        "Sh2-142",
+        "LBN 511",
+        "Ced 206",
+        "Cr 452"
+      ],
+      "ra": 341.837,
+      "dec": 58.132,
+      "type": "cn",
+      "con": "Cep",
+      "mag": 7.2,
+      "size": 25,
+      "size2": 20
+    }
+  ],
+  "date": "2026-10-15",
+  "place": {
+    "name": "Arvidsjaur",
+    "lat": 65.5907,
+    "lon": 19.1773
+  },
+  "gear": {
+    "scope": "William Optics RedCat 71",
+    "focal": 350,
+    "aperture": 71,
+    "camera": "ZWO ASI585MC Pro",
+    "pixel": 2.9,
+    "width": 3840,
+    "height": 2160,
+    "filters": {
+      "osc": true,
+      "lrgb": false,
+      "dual": false,
+      "ha": false,
+      "oiii": false,
+      "sii": false
+    },
+    "bortle": 5,
+    "minAlt": 30
+  }
+}

@@ -1,0 +1,52 @@
+# Reference sessions are large and personal: they stay on the developer's computer.
+# How to set them up: docs/samples.md
+Samples/
+samples/
+
+# Never publish image data, personal session files or local settings by accident.
+*.fit
+*.fits
+*.fts
+*.xisf
+*.cr2
+*.cr3
+*.nef
+*.arw
+*.dng
+*.mksession
+*.mktargets
+!tests/fixtures/*.mksession
+!tests/fixtures/*.mktargets
+advastro.toml
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Build output: executables and archives are never committed
+# (the build/ scripts and icons themselves are tracked)
+build/.venv/
+build/work/
+build/*.log
+dist/
+*.exe
+*.dmg
+*.app/
+*.zip
+*.tar.gz
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local output
+reports/
+*.advastro.json

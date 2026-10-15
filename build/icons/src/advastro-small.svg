@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="0.35" y2="1">
+  <stop offset="0" stop-color="#1A2A57"/><stop offset="0.55" stop-color="#101734"/><stop offset="1" stop-color="#070A18"/>
+ </linearGradient>
+ <radialGradient id="ha" cx="300" cy="720" r="460" gradientUnits="userSpaceOnUse">
+  <stop offset="0" stop-color="#E5457A" stop-opacity="0.55"/><stop offset="0.5" stop-color="#B0306A" stop-opacity="0.2"/><stop offset="1" stop-color="#B0306A" stop-opacity="0"/>
+ </radialGradient>
+ <radialGradient id="o3" cx="760" cy="300" r="420" gradientUnits="userSpaceOnUse">
+  <stop offset="0" stop-color="#2EC4C9" stop-opacity="0.42"/><stop offset="0.55" stop-color="#1E7FA8" stop-opacity="0.14"/><stop offset="1" stop-color="#1E7FA8" stop-opacity="0"/>
+ </radialGradient>
+ <radialGradient id="glow" cx="512" cy="512" r="210" gradientUnits="userSpaceOnUse">
+  <stop offset="0" stop-color="#FFFFFF" stop-opacity="1"/><stop offset="0.18" stop-color="#F4F8FF" stop-opacity="0.95"/><stop offset="0.38" stop-color="#BFD9FF" stop-opacity="0.35"/><stop offset="1" stop-color="#9CC4FF" stop-opacity="0"/>
+ </radialGradient>
+ <linearGradient id="spikeV" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#CFE3FF" stop-opacity="0"/><stop offset="0.5" stop-color="#FFFFFF" stop-opacity="1"/><stop offset="1" stop-color="#CFE3FF" stop-opacity="0"/>
+ </linearGradient>
+ <linearGradient id="spikeH" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0" stop-color="#CFE3FF" stop-opacity="0"/><stop offset="0.5" stop-color="#FFFFFF" stop-opacity="1"/><stop offset="1" stop-color="#CFE3FF" stop-opacity="0"/>
+ </linearGradient>
+ <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="#7FD8FF"/><stop offset="1" stop-color="#4C8DFF"/>
+ </linearGradient>
+ <linearGradient id="curve" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0" stop-color="#FFB547" stop-opacity="0"/><stop offset="0.2" stop-color="#FFB547"/><stop offset="0.8" stop-color="#FFB547"/><stop offset="1" stop-color="#FFB547" stop-opacity="0"/>
+ </linearGradient>
+</defs>
+<rect x="0" y="0" width="1024" height="1024" rx="200" fill="url(#bg)"/>
+<rect x="0" y="0" width="1024" height="1024" rx="200" fill="url(#ha)"/>
+<rect x="0" y="0" width="1024" height="1024" rx="200" fill="url(#o3)"/>
+<path d="M793.9,614.6 A300,300 0 0 1 614.6,793.9" fill="none" stroke="#5B8CFF" stroke-width="80" stroke-linecap="round"/><path d="M409.4,793.9 A300,300 0 0 1 230.1,614.6" fill="none" stroke="#FF5C7C" stroke-width="80" stroke-linecap="round"/><path d="M230.1,409.4 A300,300 0 0 1 409.4,230.1" fill="none" stroke="#5FE08F" stroke-width="80" stroke-linecap="round"/><path d="M614.6,230.1 A300,300 0 0 1 793.9,409.4" fill="none" stroke="#38D0D6" stroke-width="80" stroke-linecap="round"/>
+<path d="M512,72 L570,512 L512,952 L454,512 Z" fill="url(#spikeV)" opacity="1"/><path d="M72,512 L512,454 L952,512 L512,570 Z" fill="url(#spikeH)" opacity="1"/>
+<circle cx="512" cy="512" r="200" fill="url(#glow)"/>
+<circle cx="512" cy="512" r="96" fill="#FFFFFF"/>
+<circle cx="724.1" cy="299.9" r="120" fill="#FFB547" stroke="#0E1430" stroke-width="34"/><path d="M673.8,301.8 L710.6,338.6 L776.4,261.2" fill="none" stroke="#0E1430" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

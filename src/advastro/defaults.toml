@@ -1,0 +1,56 @@
+# Advanced Astrophoto Analyzer built-in defaults.
+# Copy any section into your own config file to override it.
+# Layering, last wins: these defaults -> user config -> advastro.toml in the
+# session folder -> --config file -> command-line flags.
+
+[general]
+language = "en"
+theme = "dark"          # dark | night
+jobs = 0                # parallel workers; 0 = one per CPU core
+
+[profile]
+skill = "intermediate"  # beginner | intermediate | advanced
+aesthetic = "natural"   # natural | HOO | SHO
+software = ["PixInsight", "Siril", "StarNet"]   # also: GraXpert
+paid_addons = []        # e.g. ["BlurXTerminator", "NoiseXTerminator", "StarXTerminator"]
+
+[solver]
+engine = "astap"
+astap_path = ""         # empty = detect automatically
+database_path = ""      # folder with ASTAP star databases; empty = detect
+auto_solve = true       # solve after analysis when the files carry no solution
+search_radius_deg = 30.0
+timeout_s = 90.0
+
+[calibration]
+analyze = true          # measure bias, darks, flats and flat darks found with the lights
+
+[compare]
+# Rate my pic: checks against the sky and comparisons with other photographers.
+auto_sky = true         # plate solve, Gaia depth and colour check right after the rating
+survey = true           # fetch the same field from DSS2 / Pan-STARRS for blinking
+browser = true          # without an AstroBin key: open search pages in the browser
+astrobin_api_key = ""   # request one at https://www.astrobin.com/api/request-key/
+astrobin_api_secret = ""
+
+[equipment]
+# Used when file headers do not say. Leave as 0 to rely on headers.
+focal_length_mm = 0.0
+pixel_size_um = 0.0
+
+[measure]
+detect_sigma = 5.0
+min_star_area_px = 5
+max_fit_stars = 150
+background_box_px = 64
+saturation_level = 0.98
+
+[reject]
+strictness = "normal"   # lenient | normal | strict (applied by the advisor)
+fwhm_sigma = 3.0
+eccentricity_max = 0.6
+star_count_fraction = 0.6
+background_sigma = 4.0
+
+[report]
+formats = ["table"]     # table | json | csv  (pdf and pptx come in phase 1)

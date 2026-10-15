@@ -1,0 +1,126 @@
+{
+  "app": "miklosoft-session",
+  "version": 2,
+  "id": "mv7nvn39xqzmxm",
+  "name": "",
+  "created": "2026-10-14T05:20:33.189Z",
+  "modified": "2026-10-14T05:48:32.833Z",
+  "date": "2026-10-14",
+  "place": {
+    "name": "Arvidsjaur",
+    "lat": 65.5907,
+    "lon": 19.1773
+  },
+  "gear": {
+    "scope": "William Optics RedCat 71",
+    "focal": 350,
+    "aperture": 71,
+    "camera": "ZWO ASI585MC Pro",
+    "pixel": 2.9,
+    "width": 3840,
+    "height": 2160,
+    "colour": true,
+    "rn": null,
+    "filters": {
+      "osc": true,
+      "lrgb": false,
+      "dual": true,
+      "ha": false,
+      "oiii": false,
+      "sii": false
+    }
+  },
+  "bortle": 6,
+  "minAlt": 40,
+  "window": "astro",
+  "targets": [
+    {
+      "id": "C 20",
+      "name": "North America Nebula",
+      "ids": [
+        "C 20",
+        "NGC 7000",
+        "Sh2-117",
+        "LBN 373",
+        "Ced 183d"
+      ],
+      "ra": 314.696,
+      "dec": 44.33,
+      "type": "em",
+      "con": "Cyg",
+      "mag": 4,
+      "size": 120,
+      "plan": {
+        "mode": "auto",
+        "weight": 2,
+        "subs": {}
+      }
+    }
+  ],
+  "boundaries": null,
+  "log": {
+    "rig": {
+      "reducer": "",
+      "wheel": "",
+      "filterset": "",
+      "mount": "",
+      "guider": "",
+      "guideCam": "",
+      "focuser": "",
+      "rotator": ""
+    },
+    "cam": {
+      "gain": 201,
+      "offset": null,
+      "bin": 1,
+      "temp": -10
+    },
+    "guide": {
+      "software": "",
+      "exp": null,
+      "raAgg": null,
+      "decAgg": null,
+      "minMove": null,
+      "dither": null,
+      "settle": null
+    },
+    "notes": {
+      "night": "",
+      "t": {}
+    },
+    "entries": [
+      {
+        "id": "mv7odpax8xg65f",
+        "type": "lights",
+        "at": "2026-10-14T05:34:35.865Z",
+        "mod": "2026-10-14T05:38:42.820Z",
+        "target": "C 20",
+        "filter": "Dual",
+        "sub": 300,
+        "count": 40,
+        "rejected": 0,
+        "gain": 201,
+        "offset": null,
+        "bin": 1,
+        "temp": -10
+      },
+      {
+        "id": "mv7ovmssmo8rmg",
+        "type": "cal",
+        "at": "2026-10-14T05:48:32.428Z",
+        "mod": "2026-10-14T05:48:32.428Z",
+        "target": null,
+        "kind": "flat",
+        "filter": "Dual",
+        "sub": 201,
+        "count": 50,
+        "gain": 201,
+        "offset": null,
+        "bin": 1,
+        "temp": -10
+      }
+    ],
+    "deleted": [],
+    "profile": ""
+  }
+}

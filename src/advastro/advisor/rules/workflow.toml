@@ -1,0 +1,330 @@
+# Advanced Astrophoto Analyzer processing rules.
+#
+# Each [[step]] is one recommendation. Fields:
+#   id          unique name; tool translators (translators/*.toml) key on it
+#   stage       insight | prepare | calibrate | stack | linear | stretch | nonlinear | finish
+#   title       short instruction (may use {placeholders})
+#   when        condition on the session facts (see advisor/facts.py); omitted = always
+#   families    limit to target families: galaxy, emission, reflection, planetary,
+#               cluster, globular, unknown; omitted = all
+#   confidence  high | medium | low
+#   why         the reason, shown under the step; {placeholders} are filled from facts
+#               and params, e.g. {fwhm_arcsec:.1f}
+#   [step.params]  values for the translators; a value starting with "=" is an expression
+#
+# Facts that are unknown are treated as "not true", so a rule never fires on missing data.
+
+# ---------------------------------------------------------------- insights ----
+[[step]]
+id = "identify_target"
+stage = "insight"
+title = "Tell AdvAstro what you imaged"
+when = "family == 'unknown'"
+confidence = "high"
+why = "The target is unknown, so the advice below is general. Plate solve the session (Solve) or name the target in the FITS OBJECT keyword or the folder name to get object-specific steps."
+
+[[step]]
+id = "position_approximate"
+stage = "insight"
+title = "Plate solve for exact positions"
+when = "located and not solved"
+confidence = "medium"
+why = "The position comes from the telescope's pointing, which can be off by several arcminutes. A plate solve confirms the target and enables spectrophotometric colour calibration."
+
+[[step]]
+id = "mosaic"
+stage = "insight"
+title = "{target_label} is larger than your field"
+when = "framing == 'larger_than_field'"
+confidence = "high"
+why = "It spans about {coverage_pct:.0f} % of your field's long side ({fov_w:.0f}′ × {fov_h:.0f}′). A {panels}-panel mosaic would show all of it; for this session, frame the processing around the brightest region and expect nebulosity to reach the edges."
+[step.params]
+panels = "= max(2, round(coverage + 0.5))"
+
+[[step]]
+id = "small_target"
+stage = "insight"
+title = "{target_label} is small in this field"
+when = "framing in ['small', 'tiny']"
+confidence = "high"
+why = "It covers only about {coverage_pct:.0f} % of the field width. Crop generously around it after stacking; a longer focal length (or drizzle, if you dither) would show more detail."
+
+[[step]]
+id = "milky_way_field"
+stage = "insight"
+title = "Star-rich Milky Way field"
+when = "milky_way and family in ['emission', 'reflection', 'planetary', 'unknown']"
+confidence = "medium"
+why = "The field lies {abs_b:.0f}° from the galactic plane, so it is crowded with stars. Processing the stars separately (star removal, then recombining at reduced strength) keeps them from overwhelming the nebula."
+
+[[step]]
+id = "tracking"
+stage = "insight"
+title = "Stars are elongated across the session"
+when = "ecc >= 0.45"
+confidence = "medium"
+why = "Median eccentricity is {ecc:.2f} (0 is round). This points to tracking, guiding, balance or tilt rather than a few bad subs; check guiding graphs and polar alignment."
+
+[[step]]
+id = "more_integration"
+stage = "insight"
+title = "More integration time will help most"
+when = "integration_h < 2 and family in ['emission', 'reflection', 'galaxy', 'planetary']"
+confidence = "medium"
+why = "You kept {integration_h:.1f} h. Faint {family} detail improves with the square root of total time: doubling it raises signal-to-noise by about 40 %, more than any processing step can."
+
+[[step]]
+id = "calibration_issues"
+stage = "insight"
+title = "Check your calibration frames"
+when = "cal_issue_count > 0"
+confidence = "high"
+why = "{cal_issues}"
+
+[[step]]
+id = "no_flats"
+stage = "insight"
+title = "No flats found"
+when = "not has_flats"
+confidence = "high"
+why = "Without flats, vignetting and dust shadows stay in the image and are hard to remove later. Take flats with the same focus and camera orientation, even after the session."
+
+[[step]]
+id = "no_darks"
+stage = "insight"
+title = "No darks found"
+when = "not has_darks"
+confidence = "medium"
+why = "Darks remove amp glow and hot pixels. Without them, cosmetic correction and dithering carry that job; consider a dark library at {temp_text} and {exposure_s:.0f} s."
+
+# ----------------------------------------------------------------- prepare ----
+[[step]]
+id = "select_subs"
+stage = "prepare"
+title = "Stack only the subs you kept"
+when = "rejected > 0"
+confidence = "high"
+why = "{rejected} of {total} subs were set aside because they stand out from the session (star size, shape, star count or sky brightness). Export the kept list and use only those files."
+
+[[step]]
+id = "reference_frame"
+stage = "prepare"
+title = "Use sub {best_sub_short} as the registration reference"
+when = "best_sub"
+confidence = "medium"
+why = "It has the sharpest stars of the kept subs (FWHM {best_fwhm:.2f} px), which gives registration the best template."
+
+# --------------------------------------------------------------- calibrate ----
+[[step]]
+id = "calibrate"
+stage = "calibrate"
+title = "Calibrate with {cal_list}"
+when = "has_darks or has_flats or has_bias"
+confidence = "high"
+why = "Calibration frames were found next to the lights: {cal_found}. Calibrate the flats with {flat_cal}."
+
+[[step]]
+id = "cosmetic"
+stage = "calibrate"
+title = "Cosmetic correction for hot and cold pixels"
+confidence = "high"
+why = "CMOS sensors always have some hot pixels; removing them before debayering stops them from turning into coloured specks.{cosmetic_extra}"
+[step.params]
+hot_sigma = "= 2.5 if not has_darks else 3.0"
+cold_sigma = 3.0
+
+[[step]]
+id = "debayer"
+stage = "calibrate"
+title = "Debayer the colour data ({bayer})"
+when = "is_osc and not bayer_drizzle"
+confidence = "high"
+why = "Your camera records colour through a {bayer} filter matrix; debayering after calibration rebuilds full-colour pixels."
+
+# ------------------------------------------------------------------- stack ----
+[[step]]
+id = "register"
+stage = "stack"
+title = "Register (align) the subs"
+confidence = "high"
+why = "Stars must line up to sub-pixel precision before stacking.{drift_note}"
+
+[[step]]
+id = "local_normalization"
+stage = "stack"
+title = "Use local normalization"
+when = "total >= 8 and (gradient_spread >= 3 or bortle >= 5)"
+confidence = "medium"
+why = "Sky gradients change during the night (spread {gradient_spread:.1f} % between subs{bortle_text}). Local normalization matches them before stacking so rejection works on real outliers."
+
+[[step]]
+id = "integrate"
+stage = "stack"
+title = "Integrate with {rejection}"
+confidence = "high"
+why = "{kept} subs are best served by {rejection}: {rejection_reason}"
+[step.params]
+rejection = "= 'percentile clipping' if kept < 8 else ('Winsorized sigma clipping' if kept < 20 else ('linear fit clipping' if kept < 30 else 'generalized ESD'))"
+rejection_reason = "= 'with few subs, statistics are unreliable and simple percentile limits are safest.' if kept < 8 else ('robust to outliers while keeping most data.' if kept < 20 else ('handles gradient changes between many subs well.' if kept < 30 else 'the most precise test once there are many subs.'))"
+sigma_low = 4.0
+sigma_high = 3.0
+
+[[step]]
+id = "drizzle"
+stage = "stack"
+title = "Drizzle {drizzle_scale}x"
+when = "drizzle_recommended"
+confidence = "medium"
+why = "{drizzle_reason}"
+[step.params]
+drop_shrink = 0.9
+
+[[step]]
+id = "dither_next_time"
+stage = "stack"
+title = "Dither next time"
+when = "dithered == False"
+confidence = "medium"
+why = "The subs did not move between exposures (median shift {dither_px:.1f} px). Dithering every 1–3 subs removes walking noise and colour mottle, and makes drizzle possible."
+
+# ------------------------------------------------------------------ linear ----
+[[step]]
+id = "crop"
+stage = "linear"
+title = "Crop the stacking edges"
+confidence = "high"
+why = "Registration leaves thin edges with fewer subs; they confuse gradient removal and colour calibration."
+
+[[step]]
+id = "gradient"
+stage = "linear"
+title = "Remove the background gradient{gradient_strength}"
+confidence = "high"
+why = "{gradient_reason}"
+
+[[step]]
+id = "solve_image"
+stage = "linear"
+title = "Plate solve the stacked image"
+when = "is_color"
+confidence = "high"
+why = "{solve_reason}"
+
+[[step]]
+id = "color_calibration"
+stage = "linear"
+title = "Spectrophotometric colour calibration"
+when = "is_color"
+confidence = "= 'high' if solved else 'medium'"
+why = "{color_reason}"
+
+[[step]]
+id = "deconvolution"
+stage = "linear"
+title = "Sharpen with deconvolution"
+when = "fwhm_px >= 1.8 and snr >= 20 and family not in ['cluster']"
+confidence = "= 'high' if family in ['galaxy', 'planetary'] else 'medium'"
+why = "Stars are {fwhm_px:.1f} px wide, enough samples per star for deconvolution to recover detail{deconv_target}."
+[step.params]
+sharpen_stars = 0.25
+sharpen_nonstellar = "= 0.8 if family in ['galaxy', 'planetary'] else 0.5"
+
+[[step]]
+id = "skip_deconvolution"
+stage = "linear"
+title = "Skip deconvolution"
+when = "fwhm_px < 1.8"
+confidence = "medium"
+why = "Stars are only {fwhm_px:.1f} px wide (undersampled); deconvolution has too few pixels per star to work with and mainly adds artefacts."
+
+[[step]]
+id = "noise_linear"
+stage = "linear"
+title = "Reduce noise (linear)"
+confidence = "medium"
+why = "With {integration_h:.1f} h of data a {nr_word} noise reduction keeps faint detail; doing it before stretching works on the true noise."
+[step.params]
+nr_strength = "= 0.85 if integration_h < 2 else (0.7 if integration_h < 5 else 0.5)"
+nr_word = "= 'strong' if integration_h < 2 else ('moderate' if integration_h < 5 else 'light')"
+
+[[step]]
+id = "star_separation"
+stage = "linear"
+title = "Separate stars from the nebula"
+families = ["emission", "reflection", "planetary"]
+confidence = "= 'high' if milky_way else 'medium'"
+why = "Processing {target_label} without stars lets you stretch and sharpen the nebula hard while keeping stars small and natural."
+
+[[step]]
+id = "narrowband_extract"
+stage = "linear"
+title = "Split Hα and OIII from your dual-band data"
+when = "dual_band and is_osc"
+families = ["emission", "planetary", "unknown"]
+confidence = "high"
+why = "A dual-band filter on a colour camera records Hα in the red pixels and OIII in the green and blue pixels. Extracting them gives two clean channels for an {palette_text} palette.{sho_note}"
+
+# ----------------------------------------------------------------- stretch ----
+[[step]]
+id = "stretch"
+stage = "stretch"
+title = "Stretch to non-linear"
+confidence = "high"
+why = "{stretch_reason}"
+
+[[step]]
+id = "stretch_stars"
+stage = "stretch"
+title = "Stretch the stars separately"
+families = ["emission", "reflection", "planetary"]
+confidence = "medium"
+why = "A gentle arcsinh stretch keeps star colour and size under control while the starless image gets the stronger stretch."
+
+# --------------------------------------------------------------- nonlinear ----
+[[step]]
+id = "hdr"
+stage = "nonlinear"
+title = "Recover the bright core"
+when = "bright_core"
+confidence = "medium"
+why = "{target_label} has a bright core (magnitude {target_mag:.1f}) that saturates after stretching; a multiscale HDR step brings back its structure."
+
+[[step]]
+id = "local_contrast"
+stage = "nonlinear"
+title = "Bring out structure with local contrast"
+families = ["emission", "reflection", "galaxy", "planetary", "unknown"]
+confidence = "medium"
+why = "{contrast_reason}"
+
+[[step]]
+id = "saturation"
+stage = "nonlinear"
+title = "Boost colour saturation"
+when = "is_color or dual_band"
+confidence = "medium"
+why = "{saturation_reason}"
+
+[[step]]
+id = "star_recombine"
+stage = "nonlinear"
+title = "Add the stars back"
+families = ["emission", "reflection", "planetary"]
+confidence = "medium"
+why = "A screen blend puts the stars back without hard edges; reduce their strength if the field is crowded{milky_way_note}."
+
+[[step]]
+id = "cluster_stars"
+stage = "nonlinear"
+title = "Keep star colours natural"
+families = ["cluster", "globular"]
+confidence = "medium"
+why = "For a star cluster the stars are the subject: skip star removal, stretch gently (arcsinh keeps colour) and avoid strong sharpening, which swells bright stars."
+
+# ------------------------------------------------------------------ finish ----
+[[step]]
+id = "export"
+stage = "finish"
+title = "Save the master and export for sharing"
+confidence = "high"
+why = "Keep the full-depth master (XISF or 32-bit FITS) for reprocessing; share a 16-bit TIFF or a high-quality JPEG."

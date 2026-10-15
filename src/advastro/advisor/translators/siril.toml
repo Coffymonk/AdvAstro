@@ -1,0 +1,152 @@
+# Siril translations of the neutral workflow steps (rules/workflow.toml).
+# Same format as pixinsight.toml. Menu paths follow Siril 1.4.
+
+tool = "Siril"
+
+[[select_subs]]
+process = "Sequence frame selector"
+menu = "Sequence tab › Frame List"
+settings = ["Unselect the rejected subs, or copy only the kept files ({kept}) into the lights folder before running the script"]
+
+[[reference_frame]]
+process = "Frame List › Reference frame"
+menu = "Sequence tab › Frame List"
+settings = ["Set {best_sub} as reference"]
+
+[[calibrate]]
+process = "Calibration (OSC_Preprocessing script, or the Calibration tab)"
+menu = "Scripts › OSC_Preprocessing (or Mono_Preprocessing)"
+settings = ["Folders: lights, darks, flats, biases ({cal_found})", "Flats: calibrated with {flat_cal}", "Dark optimization: {dark_optimize}"]
+
+[[cosmetic]]
+when = "has_darks"
+process = "Cosmetic correction from master dark"
+menu = "Calibration tab › Cosmetic Correction"
+settings = ["Use master dark", "Cold / hot sigma: {cold_sigma:.1f} / {hot_sigma:.1f}"]
+[[cosmetic]]
+process = "Cosmetic correction (auto detect)"
+menu = "Image Processing › Cosmetic Correction"
+settings = ["Command: find_cosme {cold_sigma:.1f} {hot_sigma:.1f}"]
+
+[[debayer]]
+process = "Debayer at calibration"
+menu = "Calibration tab › Debayer before saving"
+settings = ["Pattern: from header ({bayer})", "Interpolation: RCD"]
+
+[[register]]
+process = "Global star alignment"
+menu = "Registration tab"
+settings = ["Method: Global Star Alignment (deep-sky)", "Transformation: Homography"]
+
+[[local_normalization]]
+process = "Per-sub background removal"
+menu = "Image Processing › Background Extraction › Apply to sequence"
+settings = ["Command: seqsubsky <sequence> 1", "Then stack with additive + scaling normalization"]
+note = "Siril has no local normalization; removing each sub's gradient first achieves much the same."
+
+[[integrate]]
+process = "Stacking"
+menu = "Stacking tab"
+settings = ["Method: Average with rejection", "Rejection: {rejection}", "Sigma low / high: {sigma_low:.1f} / {sigma_high:.1f}", "Normalization: Additive with scaling", "Weighting: by number of stars (or wFWHM)"]
+
+[[drizzle]]
+process = "Drizzle at registration"
+menu = "Registration tab › Drizzle"
+settings = ["Enable drizzle (works on CFA data as Bayer drizzle)", "Scaling: {drizzle_scale}x", "Pixel fraction: {drop_shrink:.1f}"]
+
+[[crop]]
+process = "Crop"
+menu = "Select an area › right-click › Crop"
+settings = ["Trim the stacking edges"]
+
+[[gradient]]
+when = "graxpert"
+process = "GraXpert (integrated)"
+menu = "Image Processing › Background Extraction › GraXpert"
+settings = ["Operation: Background Extraction", "Method: AI"]
+[[gradient]]
+process = "Background Extraction"
+menu = "Image Processing › Background Extraction"
+settings = ["Interpolation: RBF (or polynomial degree 1–2)", "Generate samples, then delete any on the target", "Correction: Subtraction"]
+
+[[solve_image]]
+process = "Image Plate Solver"
+menu = "Tools › Astrometry › Image Plate Solver"
+settings = ["Target: search by name, or enter the coordinates from the advice text", "Pixel size and focal length: from the image header"]
+
+[[color_calibration]]
+when = "dual_band"
+process = "Spectrophotometric Color Calibration (SPCC)"
+menu = "Image Processing › Color Calibration › Spectrophotometric Color Calibration"
+settings = ["Narrowband mode: on", "Red: Hα 656.3 nm; Green/Blue: OIII 500.7 nm, with your filter's bandwidths"]
+[[color_calibration]]
+process = "Spectrophotometric Color Calibration (SPCC)"
+menu = "Image Processing › Color Calibration › Spectrophotometric Color Calibration"
+settings = ["Sensor: your camera (OSC sensor list)", "Filters: your OSC/RGB filters", "White reference: Average Spiral Galaxy"]
+
+[[deconvolution]]
+process = "Deconvolution"
+menu = "Image Processing › Deconvolution"
+settings = ["PSF: from stars (Dynamic PSF)", "Algorithm: Richardson-Lucy, 10–20 iterations", "Regularization: Total Variation"]
+
+[[noise_linear]]
+process = "Denoise"
+menu = "Image Processing › Denoise"
+settings = ["Algorithm: NL-Bayes", "Modulation: {nr_strength:.2f}"]
+
+[[star_separation]]
+process = "StarNet Star Removal"
+menu = "Image Processing › Star Processing › StarNet Star Removal"
+settings = ["Generate star mask: on", "Pre-stretch: on for linear data"]
+
+[[narrowband_extract]]
+process = "Extract Ha and OIII"
+menu = "Image Processing › Extraction › Split CFA channels / Extract Ha-OIII"
+settings = ["Command: extract_HaOIII on the calibrated CFA subs", "Stack Hα and OIII separately, then combine: R = Hα, G = OIII, B = OIII"]
+note = "Extraction works on undebayered (CFA) data, so do it right after calibration."
+
+[[stretch]]
+when = "family in ['cluster', 'globular']"
+process = "Asinh Transformation"
+menu = "Image Processing › Asinh Transformation"
+settings = ["Stretch factor: 10–40", "Black point offset: just below the background"]
+[[stretch]]
+process = "Generalized Hyperbolic Stretch"
+menu = "Image Processing › Generalized Hyperbolic Stretch"
+settings = ["Symmetry point: background peak", "Highlight protection: 0.85–0.95", "Several small stretches"]
+
+[[stretch_stars]]
+process = "Asinh Transformation"
+menu = "Image Processing › Asinh Transformation"
+settings = ["Apply to the stars image", "Stretch factor: 20–60"]
+
+[[hdr]]
+process = "Generalized Hyperbolic Stretch (highlight protection)"
+menu = "Image Processing › Generalized Hyperbolic Stretch"
+settings = ["Raise highlight protection to keep core structure"]
+note = "Siril has no direct HDR multiscale tool; protect highlights during the stretch instead."
+
+[[local_contrast]]
+process = "CLAHE"
+menu = "Image Processing › CLAHE"
+settings = ["Tiles size: 8–16", "Clip limit: 1.5–2.0", "Apply to the starless image"]
+
+[[saturation]]
+process = "Color Saturation"
+menu = "Image Processing › Color Saturation"
+settings = ["Amount: 0.2–0.5", "Background factor: 1.5 to protect the background"]
+
+[[star_recombine]]
+process = "Star Recomposition"
+menu = "Image Processing › Star Processing › Star Recomposition"
+settings = ["Starless and stars images", "Lower the stars' stretch to dim them"]
+
+[[cluster_stars]]
+process = "Asinh Transformation + Color Saturation"
+menu = "Image Processing"
+settings = ["No star removal", "Gentle saturation"]
+
+[[export]]
+process = "Save As"
+menu = "File › Save As"
+settings = ["Master: FITS 32-bit", "Sharing: TIFF 16-bit or JPEG"]

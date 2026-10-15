@@ -1,0 +1,510 @@
+# "How to improve this image" knowledge for Rate my pic.
+#
+# One table per finding id (see judge.py). Fields:
+#   why        what causes it (one or two sentences)
+#   pixinsight list of steps; {placeholders} are measured values
+#   siril      list of steps
+#   <tool>@<add-on>  steps used instead when the user owns that add-on
+#                    (add-ons come from Settings › Your software)
+#   capture    what to do differently at the telescope (optional)
+#
+# Placeholders available everywhere: sky_pct, target_sky, noise_pct, fwhm, gradient_pct,
+# saturation_pct, plus finding-specific ones listed next to each table.
+
+[linear]
+why = "The data is still linear: the faint signal is there but has not been brought into view. Every other judgement is made on an automatic stretch."
+pixinsight = [
+  "Background and colour first, while linear: GraXpert or DynamicBackgroundExtraction, then SpectrophotometricColorCalibration.",
+  "Stretch with GeneralizedHyperbolicStretch (several gentle passes, symmetry point at the background peak) or HistogramTransformation via a ScreenTransferFunction preview.",
+  "Aim for a background around {target_sky} % brightness.",
+]
+siril = [
+  "Remove the gradient (Background Extraction or GraXpert), then Photometric/Spectrophotometric Color Calibration.",
+  "Stretch with Generalized Hyperbolic Stretch, or Asinh Transformation followed by Histogram Transformation.",
+  "Aim for a background around {target_sky} % brightness.",
+]
+
+[crushed_black]
+why = "The black point is set too high: the darkest sky has been cut to pure black, which takes faint stars, the faint outer nebulosity and any natural texture with it ({black_clip} % of the pixels are clipped)."
+pixinsight = [
+  "Go back to the version before the final curves or levels step.",
+  "HistogramTransformation: move the shadows slider left until the readout shows no (or only a few) clipped pixels.",
+  "CurvesTransformation: lift the lowest point of the curve slightly so the background sits near {target_sky} %.",
+]
+siril = [
+  "Undo the last levels or curves step.",
+  "Histogram Transformation: lower the shadows value until the clipping percentage is close to zero.",
+  "Curves: raise the bottom end a little so the background lands near {target_sky} %.",
+]
+
+[dark_background]
+why = "The background sits at {sky_pct} %. That looks dramatic on a bright screen, but faint stars and the outer, faint nebulosity sink into black, and on darker screens the image looks empty."
+pixinsight = [
+  "CurvesTransformation: lift the shadows slightly (a point at input 0.05 raised to about 0.08).",
+  "Or a final HistogramTransformation with a small midtones move to the left.",
+  "Target: background around {target_sky} %, measured with the readout on an empty patch of sky.",
+]
+siril = [
+  "Curves: lift the lower part of the curve slightly.",
+  "Or Histogram Transformation with a small midtones change.",
+  "Target: background around {target_sky} %.",
+]
+
+[bright_background]
+why = "The background sits at {sky_pct} %. A grey sky lowers contrast and makes the image look hazy or washed out."
+pixinsight = [
+  "HistogramTransformation: move the shadows slider right until the background drops to about {target_sky} %, watching the clipping count.",
+  "Or CurvesTransformation with a slight S-curve that darkens the shadows and keeps the midtones.",
+]
+siril = [
+  "Histogram Transformation: raise the shadows value until the background drops to about {target_sky} %.",
+  "Or Curves with a gentle S-curve.",
+]
+
+[shadow_clip]
+why = "{black_clip} % of the pixels have at least one colour clipped to zero. Clipped shadows turn the sky blotchy and lose faint colour."
+pixinsight = [
+  "Lower the black point of the last stretch slightly until clipping falls below 0.1 %.",
+  "If one channel clips first, neutralize the background before stretching (BackgroundNeutralization or SPCC's background step).",
+]
+siril = [
+  "Lower the shadows value of the last stretch until clipping falls below 0.1 %.",
+  "Neutralize the background before stretching (Color Calibration › Background).",
+]
+
+[gradient]
+why = "The background brightness changes by {gradient_pct} % across the frame{direction}. Usually that is light pollution, moonlight or an imperfect flat. If the brightness change is real nebulosity, you can ignore this."
+pixinsight = [
+  "Work on the linear master: GraXpert (AI background extraction) or DynamicBackgroundExtraction with 15–25 samples placed only on empty sky.",
+  "Correction: Subtraction for light pollution; Division only for vignetting left over from flats.",
+  "Check the result with a strong ScreenTransferFunction: the sky should look even.",
+]
+siril = [
+  "On the linear image: Image Processing › Background Extraction › GraXpert (AI), or the RBF background extraction with samples on empty sky.",
+  "Correction: Subtraction.",
+  "Check with a strong autostretch view: the sky should look even.",
+]
+capture = [
+  "Take flats for every session without changing the focus or camera rotation in between.",
+  "Image the target when it is highest and away from the Moon and town glow.",
+]
+
+[color_gradient]
+why = "The background changes colour across the frame (up to {color_gradient_pct} % between channels). Light pollution and moonlight are rarely neutral, so one side turns a different tint."
+pixinsight = [
+  "Background extraction per channel on the linear master (GraXpert or DBE with Subtraction).",
+  "Then BackgroundNeutralization or SPCC with a background reference on empty sky.",
+]
+siril = [
+  "Background Extraction on the linear image (GraXpert or RBF), then Color Calibration with a background reference.",
+]
+
+[color_cast]
+why = "The background is tinted {cast_name} (the channels differ by {cast_pct} % of full scale). A neutral dark grey sky lets the real colours of the object stand out."
+pixinsight = [
+  "Before stretching: BackgroundNeutralization with a preview on empty sky, or SPCC with its background reference.",
+  "After stretching: CurvesTransformation per channel, lowering the {cast_channel} curve's shadows slightly until the sky is neutral.",
+]
+siril = [
+  "Before stretching: Color Calibration › Background Neutralization on an empty-sky selection.",
+  "After stretching: Curves per channel, lowering the {cast_channel} shadows slightly.",
+]
+
+[green_cast]
+why = "The sky has a green tint. Green is rare in deep-sky objects, so viewers read it as an error; it usually comes from the camera's colour response or light pollution."
+pixinsight = [
+  "SCNR: Color to remove Green, Protection method Average Neutral, Amount 0.6–1.0.",
+  "Apply on the linear image after colour calibration, or on the stretched image with lower Amount.",
+]
+siril = [
+  "Image Processing › Remove Green Noise (SCNR): Average Neutral, amount 0.6–1.0.",
+]
+
+[noise]
+why = "Grain is visible in the background (noise about {noise_pct} % of full scale). Stretching amplifies noise; the fix is gentle noise reduction before the stretch, and more integration time."
+pixinsight = [
+  "On the linear image: MultiscaleLinearTransform, 4 layers with noise reduction thresholds 3 / 2 / 1 / 0.5, through an inverted luminance mask so the bright parts are protected.",
+  "Or TGVDenoise at moderate strength.",
+  "Do not chase a perfectly smooth background: a fine, even grain looks natural.",
+]
+"pixinsight@NoiseXTerminator" = [
+  "NoiseXTerminator on the linear image: Denoise 0.6–0.8, Detail 0.15.",
+  "A second, light pass (Denoise 0.3) after the stretch if needed.",
+]
+siril = [
+  "Image Processing › Denoise: NL-Bayes with modulation 0.7–1.0, on the linear or lightly stretched image.",
+]
+"siril@NoiseXTerminator" = [
+  "NoiseXTerminator is not available in Siril; use Denoise (NL-Bayes, modulation 0.7–1.0), or run GraXpert's AI denoise.",
+]
+capture = [
+  "More integration time is the only real cure: doubling it lowers the noise by about 30 %.",
+]
+
+[color_noise]
+why = "The grain is coloured (red, green and blue speckles in the sky). Colour noise is the most visible kind and the easiest to remove without losing detail."
+pixinsight = [
+  "MultiscaleLinearTransform on chrominance only (Target: Chrominance), 4 layers, strong thresholds on layers 1–2.",
+  "Or ColorSaturation/CurvesTransformation lowering saturation in the darkest tones through a mask.",
+]
+"pixinsight@NoiseXTerminator" = [
+  "NoiseXTerminator: raise the colour separation option (Enable color separation, colour Denoise 0.9).",
+]
+siril = [
+  "Denoise with 'Independent channel denoising' off, or reduce saturation in the shadows with the Color Saturation tool's background factor.",
+]
+
+[mottle]
+why = "The background shows blotches a few pixels across (mottle). It typically comes from strong noise reduction on noisy data, or from too few, too similar frames."
+pixinsight = [
+  "Go back to before noise reduction and apply it more gently (lower amount, fewer layers).",
+  "Use a luminance mask so noise reduction is strongest only in the darkest areas.",
+  "A small amount of fine grain hides mottle better than more smoothing.",
+]
+siril = [
+  "Redo Denoise with a lower modulation, or apply it only to a starless, masked background.",
+]
+capture = [
+  "Dither between subs and collect more of them: mottle usually means too little integration time.",
+]
+
+[plastic]
+why = "The background is almost perfectly smooth (noise {noise_pct} % of full scale). That often reads as 'plastic' or painted, and very faint detail goes with the noise."
+pixinsight = [
+  "Reduce noise reduction strength or blend some of the original back: PixelMath  0.8*denoised + 0.2*original.",
+]
+"pixinsight@NoiseXTerminator" = [
+  "Lower NoiseXTerminator's Denoise to 0.5–0.7 and raise Detail; or blend the original back in with PixelMath.",
+]
+siril = [
+  "Redo Denoise with a lower modulation (0.5–0.7), or blend with the original in PixelMath.",
+]
+
+[walking_noise]
+why = "The background noise has a direction (streaks at about {walking_angle}°). That pattern is called walking noise: the mount drifted slowly in one direction and the same pixel defects smeared into lines."
+pixinsight = [
+  "Restack with CosmeticCorrection and large-scale pixel rejection on; WBPP's 'Large-scale pixel rejection' helps.",
+  "Drizzle integration can reduce it further if you dithered.",
+]
+siril = [
+  "Restack with cosmetic correction from the master dark and Winsorized sigma rejection.",
+]
+capture = [
+  "Dither every 1–3 subs (in NINA, ASIAIR or PHD2), and use guiding to stop the slow drift.",
+]
+
+[hot_pixels]
+why = "{hot_pixels} single bright pixels survive in the image. They are defects in the sensor that calibration and stacking should remove."
+pixinsight = [
+  "In WBPP: enable CosmeticCorrection (Auto detect, hot sigma 3).",
+  "On the finished image: CosmeticCorrection with Auto detect, or a small MorphologicalTransformation through a hot-pixel mask.",
+]
+siril = [
+  "Image Processing › Cosmetic Correction, or redo preprocessing with cosmetic correction from the master dark.",
+]
+capture = [
+  "Dither between subs so hot pixels land in different places and are rejected during stacking.",
+]
+
+[stars_soft]
+why = "Stars are on the large side (median {fwhm} pixels across at half brightness). Large stars draw the eye away from the object and hide faint detail around them."
+pixinsight = [
+  "Deconvolution on the linear image with a PSF made by PSFImage, 20–40 iterations, with deringing and a star mask.",
+  "After the stretch: separate the stars (StarNet2), stretch them less, and recombine.",
+  "MorphologicalTransformation (Erosion, size 3–5, amount 0.3–0.5) through a star mask reduces star size gently.",
+]
+"pixinsight@BlurXTerminator" = [
+  "BlurXTerminator on the linear image: Sharpen Stars 0.25–0.5, Adjust Star Halos -0.1 to -0.2.",
+  "After the stretch: separate the stars and stretch them less before recombining.",
+]
+siril = [
+  "Deconvolution (Richardson-Lucy, PSF from stars) on the linear image.",
+  "After the stretch: StarNet Star Removal, stretch the stars less, and recombine with Star Recomposition.",
+]
+capture = [
+  "Check focus during the night; temperature changes shift it. A Bahtinov mask or autofocus every 1–2 hours helps.",
+]
+
+[big_stars]
+why = "The brightest stars are large blobs (about {fwhm_bright} pixels across), so they dominate the picture."
+pixinsight = [
+  "Separate stars with StarNet2 (or StarXTerminator), stretch the star image less, and recombine with PixelMath.",
+  "MorphologicalTransformation (Morphological Selection 0.3, size 5) through a star mask on the brightest stars.",
+]
+"pixinsight@StarXTerminator" = [
+  "StarXTerminator to separate the stars; stretch the stars less and recombine with PixelMath: ~((~starless)*(~(stars*0.7))).",
+]
+siril = [
+  "StarNet Star Removal; then Star Recomposition with a lower star stretch.",
+]
+
+[star_dominance]
+why = "Stars cover about {star_area} % of the frame. In rich Milky Way fields that is natural, but reducing them lets the nebula take centre stage."
+pixinsight = [
+  "Star reduction: StarNet2 or StarXTerminator, then recombine the stars at 60–80 % strength.",
+  "Or MorphologicalTransformation through a star mask.",
+]
+siril = [
+  "StarNet Star Removal, then Star Recomposition with the stars dimmed.",
+]
+
+[trailed_stars]
+why = "Stars are elongated in the same direction across the whole frame (elongation {ellipticity}). That points to tracking: guiding errors, wind, balance or polar alignment."
+pixinsight = [
+  "Restack using only the subs with round stars: SubframeSelector (Eccentricity below 0.5) or AdvAstro's sub selection.",
+  "Mild elongation can be reduced afterwards with BlurXTerminator (it corrects non-round stars) or MorphologicalTransformation.",
+]
+"pixinsight@BlurXTerminator" = [
+  "BlurXTerminator corrects mild elongation: Correct Only first, then Sharpen Stars 0.25.",
+  "Restack without the worst subs: SubframeSelector or AdvAstro's sub selection.",
+]
+siril = [
+  "Restack without the worst subs: in the sequence frame list, sort by roundness and unselect the poorest.",
+]
+capture = [
+  "Check guiding (RMS under half your image scale), balance slightly east-heavy, and redo polar alignment.",
+  "Shorter subs reduce the effect of wind and periodic error.",
+]
+
+[corner_stars]
+why = "Stars in the corners are {corner_pct} % larger than in the centre{shape}. The optics do not give a flat, sharp field to the edges."
+pixinsight = [
+  "Crop the worst corners with DynamicCrop.",
+  "BlurXTerminator (if you have it) corrects field aberrations across the frame.",
+]
+"pixinsight@BlurXTerminator" = [
+  "BlurXTerminator corrects coma and astigmatism per region: run it on the linear image with Correct Only first.",
+  "Crop what remains with DynamicCrop.",
+]
+siril = [
+  "Crop the worst corners.",
+]
+capture = [
+  "{capture_hint}",
+]
+
+[corner_elongation]
+why = "Stars are stretched in the {corner} corner only (elongation {ecc}). A single bad corner usually means sensor tilt, a corrector at the wrong distance on one side, or pinched or misaligned optics."
+pixinsight = [
+  "Crop that corner with DynamicCrop if the composition allows.",
+  "Or correct it locally: BlurXTerminator if you have it; otherwise MorphologicalTransformation through a star mask limited to that corner.",
+]
+"pixinsight@BlurXTerminator" = [
+  "BlurXTerminator on the linear image (Correct Only first): it fixes elongation per region.",
+  "Crop what remains with DynamicCrop.",
+]
+siril = [
+  "Crop that corner, or reduce the stars there with Star Recomposition after StarNet.",
+]
+capture = [
+  "Check for tilt: compare corners on a single sub (PixInsight's FWHMEccentricity script or ASTAP's image inspection). Adjust the tilt plate, or check the camera and corrector are seated squarely.",
+]
+
+[tilt]
+why = "One side of the frame is sharper than the other (best and worst corners differ by {tilt_pct} %). That is the classic sign of sensor tilt."
+pixinsight = [
+  "Crop the softest edge, or use BlurXTerminator, which corrects regional blur.",
+]
+siril = [
+  "Crop the softest edge.",
+]
+capture = [
+  "Check the camera connection for play, and use a tilt adapter if the camera has one. Tools like ASTAP's or PixInsight's FWHMEccentricity show tilt on a single sub.",
+]
+
+[star_rings]
+why = "{ring_pct} % of the bright stars have a dark ring around them. Rings come from over-sharpening or too many deconvolution iterations, and are one of the first things experienced viewers notice."
+pixinsight = [
+  "Redo deconvolution with fewer iterations and the Deringing option on (global dark 0.02–0.05, with a star mask).",
+  "Lower the strength of UnsharpMask / MultiscaleLinearTransform sharpening, and apply it through a mask that excludes stars.",
+]
+"pixinsight@BlurXTerminator" = [
+  "Lower BlurXTerminator's Sharpen Stars (0.2–0.3) and avoid extra sharpening on top.",
+  "Sharpen only nonstellar detail, through a star mask.",
+]
+siril = [
+  "Redo deconvolution with fewer iterations, or apply Unsharp Mask more gently and only to the starless image.",
+]
+
+[star_color]
+why = "Stars look almost colourless (colour spread {color_spread}). Real stars range from blue-white to orange; that variety makes an image feel natural and deep."
+pixinsight = [
+  "Colour-calibrate with SPCC on the linear data.",
+  "Stretch stars separately with ArcsinhStretch, which keeps colour in the stars.",
+  "Increase saturation on the stars only, through a star mask (CurvesTransformation, saturation curve).",
+]
+siril = [
+  "Spectrophotometric Color Calibration, then Asinh Transformation for the stars (it preserves colour).",
+  "Color Saturation on the star image after StarNet separation.",
+]
+
+[white_cores]
+why = "Most bright stars have pure white, clipped cores. The colour is lost in the centre, which makes stars look like holes in the image."
+pixinsight = [
+  "Stretch the stars with ArcsinhStretch instead of a plain histogram stretch.",
+  "Or separate stars and use a gentler stretch for the star image.",
+]
+siril = [
+  "Use Asinh Transformation on the stars (with the 'Use RGB working space' option) instead of a strong histogram stretch.",
+]
+
+[magenta_stars]
+why = "Many stars are magenta. That is typical for narrowband or dual-band data, where stars are weak in the green channel."
+pixinsight = [
+  "Invert the image, apply SCNR (green, amount 0.5–0.8), and invert back: that removes magenta.",
+  "Or replace the stars with RGB stars taken with a broadband filter.",
+]
+siril = [
+  "Negative transformation, then Remove Green Noise (SCNR), then negative again.",
+]
+
+[fringe]
+why = "Stars have a {fringe_color} rim: one colour is larger than the others. That is chromatic aberration in the optics, or channels aligned slightly differently."
+pixinsight = [
+  "Align the channels to each other (ChannelExtraction, StarAlignment of R and B to G, ChannelCombination).",
+  "Reduce the fringe colour on the stars through a star mask (CurvesTransformation on that hue, or SCNR for green fringes).",
+]
+siril = [
+  "Split channels, register them to the green channel, and recombine.",
+]
+capture = [
+  "With a doublet or a camera lens, a narrow-band or UV/IR-cut filter reduces the fringe.",
+]
+
+[muted]
+why = "Colours are muted (median saturation {saturation_pct} %). The object looks greyer than it is."
+pixinsight = [
+  "CurvesTransformation, saturation curve: a gentle lift, applied through a luminance mask so the background does not gain colour noise.",
+  "Or ColorSaturation with a curve that boosts only the object's hues.",
+]
+siril = [
+  "Color Saturation: amount 0.3–0.6 with a background factor of 1.5 to protect the sky.",
+]
+
+[oversaturated]
+why = "Colours are pushed very hard ({sat_high} % of the object is near full saturation). That looks garish and hides the subtle variations in the object."
+pixinsight = [
+  "Back off the saturation step; apply saturation in two or three small steps instead of one big one.",
+  "Use a luminance mask to keep saturation away from the brightest parts.",
+]
+siril = [
+  "Redo Color Saturation with a lower amount, or in smaller steps.",
+]
+
+[channel_clip]
+why = "{channel_clip} % of the bright areas have one colour channel clipped. Colour detail disappears there, and the hue shifts."
+pixinsight = [
+  "Reduce saturation or the final stretch so no channel hits the top or bottom.",
+  "Check with the Statistics process or the readout in the brightest parts.",
+]
+siril = [
+  "Reduce saturation or the last stretch until the histogram no longer piles up at either end.",
+]
+
+[low_detail]
+why = "Fine structure barely rises above the noise (detail ratio {detail_ratio}). The object looks soft or flat."
+pixinsight = [
+  "Deconvolution on the linear image, through a luminance mask.",
+  "After the stretch: LocalHistogramEqualization (radius 64–128, amount 0.25) or MultiscaleLinearTransform bias on layers 2–4, through a mask on the object.",
+]
+"pixinsight@BlurXTerminator" = [
+  "BlurXTerminator: Sharpen Nonstellar 0.3–0.6 on the linear image.",
+  "After the stretch: LocalHistogramEqualization (radius 64–128, amount 0.25) through a mask on the object.",
+]
+siril = [
+  "Deconvolution on the linear image, then CLAHE (tile 8–16, clip 1.5–2) on the starless object.",
+]
+
+[low_contrast]
+why = "The object barely rises above the background (only {contrast_pct} % of full scale). The image looks dim and flat; there is room to stretch more."
+pixinsight = [
+  "One more gentle stretch (GeneralizedHyperbolicStretch with highlight protection) or a CurvesTransformation midtone lift.",
+  "Then contrast in the object: LocalHistogramEqualization through a mask, or HDRMultiscaleTransform for bright cores.",
+]
+siril = [
+  "Generalized Hyperbolic Stretch: a further small stretch with highlight protection.",
+  "Then CLAHE on the object for local contrast.",
+]
+
+[clipped_highlights]
+why = "Bright parts of the object are burned out ({extended_clip_px} pixels at full white outside star cores). The structure in the brightest region is lost."
+pixinsight = [
+  "Go back to the linear image and stretch with highlight protection (GeneralizedHyperbolicStretch: Highlight protection 0.9).",
+  "HDRMultiscaleTransform (6–8 layers, lightness mask) brings back structure in bright cores.",
+]
+siril = [
+  "Redo the stretch with Generalized Hyperbolic Stretch's highlight protection, then a gentle HDR-style local contrast (CLAHE).",
+]
+capture = [
+  "For targets with very bright cores (M42, M31), add a set of short subs and blend them in.",
+]
+
+[banding]
+why = "The histogram has gaps ({comb_pct} % of the levels are empty): the image was stretched after being saved with 8 bits per channel, so smooth gradients turn into visible steps."
+pixinsight = [
+  "Process in 32-bit float from start to finish; only export to 8-bit JPEG as the very last step.",
+  "If only the 8-bit version is left, a light noise addition (NoiseGenerator, 0.5 %) hides the steps.",
+]
+siril = [
+  "Keep the working file in 32-bit FITS; export to JPEG or 8-bit PNG only at the end.",
+]
+
+[banding_risk]
+why = "The sky is so smooth that 8-bit steps form flat patches ({plateau_pct} % of the sky). Smooth gradients may show contour lines on some screens."
+pixinsight = [
+  "Export as 16-bit TIFF or PNG for printing and sharing where possible.",
+  "For JPEG, keep a little fine grain (lighter noise reduction) to dither the steps.",
+]
+siril = [
+  "Export 16-bit TIFF/PNG where possible, and keep a little fine grain for JPEG.",
+]
+
+[jpeg]
+why = "The JPEG is strongly compressed (quality about {jpeg_quality}, block artefacts {blockiness}x). Compression smears faint detail and adds 8x8 blocks in the sky."
+pixinsight = [
+  "Export with quality 92–95 (File › Save As › JPEG).",
+  "Keep the master as XISF or 16-bit TIFF and export JPEGs from it, never from another JPEG.",
+]
+siril = [
+  "Save As JPEG with quality 92–95, from the 32-bit master.",
+]
+
+[edges]
+why = "The {edges} edge{edges_s} still show stacking borders (dark or noisy strips where not all subs overlapped)."
+pixinsight = [
+  "DynamicCrop until no ragged edge remains, or enable WBPP's Autocrop.",
+]
+siril = [
+  "Select the clean area and Crop, or use the Crop option after registration.",
+]
+
+[small_image]
+why = "The picture is only {megapixels} megapixels. Judges and AstroBin viewers zoom in; a small image hides your detail."
+pixinsight = [
+  "Share at full resolution, or at least 3000 pixels on the long side.",
+]
+siril = [
+  "Share at full resolution, or at least 3000 pixels on the long side.",
+]
+
+[depth]
+why = "Your image reaches stars of magnitude {limit_mag} (Gaia G). {depth_text}"
+pixinsight = [
+  "Depth comes from integration time and dark skies. Stack more subs, and remove the worst subs rather than all borderline ones.",
+]
+siril = [
+  "Depth comes from integration time and dark skies. Stack more subs, and remove the worst subs rather than all borderline ones.",
+]
+capture = [
+  "Add integration time: to go one magnitude deeper you need about 6x the time.",
+]
+
+[color_calibration]
+why = "Star colours do not follow their true colours (correlation with Gaia colours {color_r}). {color_text}"
+pixinsight = [
+  "SpectrophotometricColorCalibration on the linear data, with your camera's sensor curve and filters.",
+  "Then avoid per-channel curves that shift the balance afterwards.",
+]
+siril = [
+  "Spectrophotometric Color Calibration on the linear data, with your sensor and filters selected.",
+]

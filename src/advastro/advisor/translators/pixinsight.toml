@@ -1,0 +1,183 @@
+# PixInsight translations of the neutral workflow steps (rules/workflow.toml).
+#
+# [[<step id>]] entries are variants; the first whose `when` matches is used.
+#   process   PixInsight process or script name
+#   menu      where to find it
+#   settings  list of "Label: value" lines; {placeholders} come from facts and params
+#   note      optional extra hint
+# A step without an entry here is shown without tool details.
+
+tool = "PixInsight"
+
+[[select_subs]]
+process = "WeightedBatchPreprocessing (WBPP)"
+menu = "Script › Batch Processing › WeightedBatchPreprocessing"
+settings = ["Lights: add only the files from the kept list ({kept} subs)"]
+
+[[reference_frame]]
+process = "WBPP › Registration Reference Image"
+menu = "WBPP, Lights tab › Registration Reference Image"
+settings = ["Mode: manual", "Reference: {best_sub}"]
+note = "Or leave it on Auto: WBPP picks by its own quality weights."
+
+[[calibrate]]
+process = "WeightedBatchPreprocessing (WBPP)"
+menu = "Script › Batch Processing › WeightedBatchPreprocessing"
+settings = ["Add the calibration frames ({cal_found})", "Let WBPP match them to the lights by exposure, binning and filter", "Flats: calibrated with {flat_cal}", "Optimize dark frames: {dark_optimize}"]
+
+[[cosmetic]]
+process = "CosmeticCorrection (via WBPP)"
+menu = "WBPP › Lights › Cosmetic Correction: Auto detect"
+settings = ["Hot pixel sigma: {hot_sigma:.1f}", "Cold pixel sigma: {cold_sigma:.1f}"]
+
+[[debayer]]
+process = "Debayer (via WBPP)"
+menu = "WBPP › Lights › Debayer"
+settings = ["CFA pattern: Auto ({bayer})", "Method: VNG"]
+
+[[register]]
+process = "StarAlignment (via WBPP)"
+menu = "WBPP › Registration"
+settings = ["Defaults are fine; enable distortion correction for wide fields"]
+
+[[local_normalization]]
+process = "LocalNormalization (via WBPP)"
+menu = "WBPP › Lights › Local Normalization"
+settings = ["Enable local normalization", "Reference: auto (or the reference frame)"]
+
+[[integrate]]
+process = "ImageIntegration (via WBPP)"
+menu = "WBPP › Image Integration"
+settings = ["Weights: PSF Signal Weight", "Rejection: {rejection}", "Sigma low / high: {sigma_low:.1f} / {sigma_high:.1f}"]
+note = "WBPP's Auto rejection picks a similar method for you."
+
+[[drizzle]]
+when = "is_osc"
+process = "DrizzleIntegration (via WBPP)"
+menu = "WBPP › Image Integration › Drizzle"
+settings = ["Enable drizzle (Bayer drizzle for colour data)", "Scale: {drizzle_scale}x", "Drop shrink: {drop_shrink:.1f}"]
+[[drizzle]]
+process = "DrizzleIntegration (via WBPP)"
+menu = "WBPP › Image Integration › Drizzle"
+settings = ["Enable drizzle", "Scale: {drizzle_scale}x", "Drop shrink: {drop_shrink:.1f}"]
+
+[[crop]]
+process = "DynamicCrop"
+menu = "Process › Geometry › DynamicCrop"
+settings = ["Trim until no ragged edge remains"]
+note = "WBPP's Autocrop option produces an already cropped master."
+
+[[gradient]]
+when = "graxpert"
+process = "GraXpert (PixInsight process or standalone)"
+menu = "Process › Etc › GraXpert, or the GraXpert app"
+settings = ["Operation: Background Extraction", "Method: AI", "Correction: Subtraction"]
+[[gradient]]
+when = "framing in ['fills_field', 'larger_than_field']"
+process = "DynamicBackgroundExtraction (DBE)"
+menu = "Process › BackgroundModelization › DynamicBackgroundExtraction"
+settings = ["Place 15–25 samples by hand on dark sky only", "Tolerance: 0.5–1.0", "Correction: Subtraction"]
+[[gradient]]
+process = "AutomaticBackgroundExtractor (ABE) or DBE"
+menu = "Process › BackgroundModelization"
+settings = ["ABE function degree: 1–2", "Correction: Subtraction"]
+
+[[solve_image]]
+process = "ImageSolver"
+menu = "Script › Image Analysis › ImageSolver"
+settings = ["Right ascension / Declination: from the advice text", "Resolution: {scale:.2f}″/px"]
+
+[[color_calibration]]
+when = "dual_band"
+process = "SpectrophotometricColorCalibration (SPCC)"
+menu = "Process › ColorCalibration › SpectrophotometricColorCalibration"
+settings = ["Narrowband filters mode: on", "Red: Hα 656.3 nm; Green and Blue: OIII 500.7 nm (your filter's bandwidths)", "Background neutralization: on"]
+[[color_calibration]]
+process = "SpectrophotometricColorCalibration (SPCC)"
+menu = "Process › ColorCalibration › SpectrophotometricColorCalibration"
+settings = ["Sensor: your camera's QE curve (or Ideal QE)", "Filters: your RGB or OSC filters", "White reference: Average Spiral Galaxy", "Background neutralization: on"]
+
+[[deconvolution]]
+when = "bxt"
+process = "BlurXTerminator"
+menu = "Process › RC-Astro › BlurXTerminator"
+settings = ["Sharpen stars: {sharpen_stars:.2f}", "Sharpen nonstellar: {sharpen_nonstellar:.2f}", "PSF diameter: Automatic"]
+[[deconvolution]]
+process = "Deconvolution"
+menu = "Process › Deconvolution › Deconvolution"
+settings = ["PSF: External, made with PSFImage script from unsaturated stars", "Algorithm: Regularized Richardson-Lucy, 20–40 iterations", "Deringing: on, with a star mask"]
+
+[[noise_linear]]
+when = "nxt"
+process = "NoiseXTerminator"
+menu = "Process › RC-Astro › NoiseXTerminator"
+settings = ["Denoise: {nr_strength:.2f}", "Detail: 0.15"]
+[[noise_linear]]
+process = "MultiscaleLinearTransform"
+menu = "Process › MultiscaleProcessing › MultiscaleLinearTransform"
+settings = ["4 layers, noise reduction thresholds 3 / 2 / 1 / 0.5", "Amount: {nr_strength:.2f}", "Linear mask to protect bright areas"]
+
+[[star_separation]]
+when = "sxt"
+process = "StarXTerminator"
+menu = "Process › RC-Astro › StarXTerminator"
+settings = ["Generate star image: on", "Unscreen stars: on"]
+[[star_separation]]
+process = "StarNet2 (free)"
+menu = "Process › Etc › StarNet2"
+settings = ["Create star mask: on"]
+
+[[narrowband_extract]]
+process = "PixelMath"
+menu = "Process › PixelMath › PixelMath"
+settings = ["Hα: $T[0]  (red channel)", "OIII: ($T[1] + $T[2]) / 2  (green and blue)", "Combine with ChannelCombination: R = Hα, G = OIII, B = OIII"]
+
+[[stretch]]
+when = "family in ['cluster', 'globular']"
+process = "ArcsinhStretch"
+menu = "Process › IntensityTransformations › ArcsinhStretch"
+settings = ["Stretch factor: 10–40", "Black point: just left of the histogram peak"]
+[[stretch]]
+process = "GeneralizedHyperbolicStretch (GHS)"
+menu = "Process › IntensityTransformations › GeneralizedHyperbolicStretch"
+settings = ["Symmetry point: background peak", "Highlight protection: 0.85–0.95", "Repeat small stretches rather than one big one"]
+
+[[stretch_stars]]
+process = "ArcsinhStretch"
+menu = "Process › IntensityTransformations › ArcsinhStretch"
+settings = ["Apply to the stars image", "Stretch factor: 20–60"]
+
+[[hdr]]
+process = "HDRMultiscaleTransform"
+menu = "Process › MultiscaleProcessing › HDRMultiscaleTransform"
+settings = ["Layers: 6–8", "Lightness mask: on", "To lightness: on"]
+
+[[local_contrast]]
+when = "family == 'galaxy'"
+process = "MultiscaleLinearTransform"
+menu = "Process › MultiscaleProcessing › MultiscaleLinearTransform"
+settings = ["Bias +0.05 to +0.15 on layers 2–4", "Through a mask on the galaxy"]
+[[local_contrast]]
+process = "LocalHistogramEqualization"
+menu = "Process › IntensityTransformations › LocalHistogramEqualization"
+settings = ["Kernel radius: 64–128", "Contrast limit: 1.5–2.0", "Amount: 0.25–0.35"]
+
+[[saturation]]
+process = "CurvesTransformation"
+menu = "Process › IntensityTransformations › CurvesTransformation"
+settings = ["Saturation curve: gentle S", "Through a luminance mask"]
+
+[[star_recombine]]
+process = "PixelMath"
+menu = "Process › PixelMath › PixelMath"
+settings = ["Expression: ~((~starless)*(~(stars*0.8)))", "Lower 0.8 to dim the stars"]
+
+[[cluster_stars]]
+process = "ArcsinhStretch + CurvesTransformation"
+menu = "Process › IntensityTransformations"
+settings = ["No star removal", "Saturation boost through a star mask"]
+
+[[export]]
+process = "File › Save As"
+menu = "File › Save As"
+settings = ["Master: XISF 32-bit float", "Sharing: TIFF 16-bit or JPEG quality 95"]
