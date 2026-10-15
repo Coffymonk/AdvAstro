@@ -1,10 +1,26 @@
-# Advanced Astrophoto Analyzer
+<p align="center">
+  <img src="build/icons/png/advastro-128.png" width="128" height="128" alt="Advanced Astrophoto Analyzer icon">
+</p>
 
-Advanced Astrophoto Analyzer (AdvAstro for short) looks at your astro imaging data and tells you how to process it.
-It measures every sub, finds the bad ones, and explains why. Later versions will
-recommend complete workflows with concrete settings for PixInsight, Siril and other tools.
+<h1 align="center">Advanced Astrophoto Analyzer</h1>
 
-It never stacks or processes images itself; your own software does that.
+<p align="center">
+  <b>Know what your astro data is worth, and what to do with it.</b><br>
+  Free analyzer and advisor for deep-sky astrophotography · Windows · macOS · Linux
+</p>
+
+Advanced Astrophoto Analyzer (AdvAstro for short) looks at your astro imaging data and tells
+you, with your own numbers, what is good, what is not and what to do about it. It measures
+every sub, finds the bad ones and explains why, checks your calibration frames, identifies
+your target, writes a processing workflow for PixInsight or Siril, and rates your finished
+pictures with a clear verdict and a plan to improve them.
+
+It never changes your files and never stacks or processes images itself; your own software
+does that.
+
+<p align="center">
+  <img src="docs/images/session-analysis.jpg" alt="A session of NGC 7000 analyzed: every sub measured, three flagged for a brighter sky, with the session summary">
+</p>
 
 > **Status: early development.** The desktop app and the command-line tool analyze FITS and
 > XISF sessions, identify the target, recommend a PixInsight or Siril workflow, and rate
@@ -42,11 +58,26 @@ It never stacks or processes images itself; your own software does that.
 | Object name only | Object-specific workflow, no framing |
 | Nothing | A general workflow, and how to get a better one |
 
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/target.jpg" alt="Target tab: North America Nebula identified from the plate solution, with a framing sketch"></td>
+    <td width="50%"><img src="docs/images/workflow.jpg" alt="Workflow tab: insights and PixInsight steps written for this session"></td>
+  </tr>
+  <tr>
+    <td align="center"><i>What you imaged, and how it fits your field</i></td>
+    <td align="center"><i>A processing workflow written for your data</i></td>
+  </tr>
+</table>
+
 ## Rate my pic
 
 **Rate my pic** (toolbar, or Ctrl+R) opens a separate window for a *finished* picture, so the
 session you have loaded stays as it is. Open or drop a FITS, XISF, TIFF (8/16/32-bit), PNG,
 JPEG or WebP file and you get:
+
+<p align="center">
+  <img src="docs/images/rate-verdict.jpg" alt="Rate my pic: a verdict of Good, with fixable issues, score 88, category bars and the most important findings">
+</p>
 
 - **A verdict**: *Excellent*, *Ready to share*, *Good, with fixable issues* or *Needs work*,
   a score out of 100 and a score per category (Stars, Background, Colour, Detail, Tonality,
@@ -65,6 +96,17 @@ JPEG or WebP file and you get:
   inside the app (with your own free AstroBin API key), or search pages opened in the browser.
   With neither enabled, no comparison is made. *Settings › Compare*.
 - **Reports** as PDF, Markdown (for forums) or JSON.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/rate-stars-overlay.jpg" alt="Stars overlay: star shape and size across the field, region by region"></td>
+    <td width="50%"><img src="docs/images/rate-improve.jpg" alt="Improve tab: a plan ordered by impact, with PixInsight steps"></td>
+  </tr>
+  <tr>
+    <td align="center"><i>Findings drawn on the picture: star shape across the field</i></td>
+    <td align="center"><i>A tailored plan to improve the picture</i></td>
+  </tr>
+</table>
 
 What it checks:
 
