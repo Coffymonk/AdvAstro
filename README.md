@@ -34,7 +34,7 @@ does that.
 > Camera raw files (CR2/NEF/ARW) are next.
 > See the [roadmap](#roadmap).
 
-- Website: <https://miklosoft.se/main>
+- Website: <https://miklosoft.se>
 - User manual: built into the app (**Help**, or **F1** for the section about what you are
   looking at), in English and Swedish. The source is in
   [`src/advastro/help/`](src/advastro/help/) as Markdown, one file per chapter.
