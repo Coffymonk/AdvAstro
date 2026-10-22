@@ -3,8 +3,8 @@
 ; build/build.py compiles this automatically on Windows when Inno Setup 6 is installed
 ; (free: https://jrsoftware.org/isinfo.php, or  winget install JRSoftware.InnoSetup).
 ; It passes these values on the command line:
-;   AppVersion      display version, e.g. 0.1.0.dev0
-;   NumericVersion  four-part version for Windows, e.g. 0.1.0.0
+;   AppVersion      display version, e.g. 1.0.0
+;   NumericVersion  four-part version for Windows, e.g. 1.0.0.0
 ;   AppDir          the PyInstaller folder of the desktop app
 ;   CliExe          the command-line tool (optional)
 ;   RootDir         the repository folder
@@ -67,7 +67,7 @@ swedish.CommandLine=Kommandorad:
 #endif
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 #ifdef CliExe
 Name: "addtopath"; Description: "{cm:AddToPath}"; GroupDescription: "{cm:CommandLine}"; Flags: unchecked
 #endif

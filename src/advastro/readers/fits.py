@@ -12,6 +12,8 @@ from pathlib import Path
 import numpy as np
 from astropy.io import fits as afits
 
+from advastro.i18n import tr
+
 from advastro.frame import Frame, FrameMeta
 
 # Keyword aliases in priority order. Different capture programs use different names.
@@ -141,7 +143,7 @@ def read(path: Path) -> Frame:
     with afits.open(path, memmap=False) as hdul:
         hdu = next((h for h in hdul if h.data is not None and h.data.ndim >= 2), None)
         if hdu is None:
-            raise ValueError(f"No image data in {path.name}")
+            raise ValueError(tr("read.err.no_image", name=path.name))
         meta = parse_header(hdu.header)
         data = np.asarray(hdu.data, dtype=np.float32)
     if data.ndim == 3 and data.shape[0] == 1:

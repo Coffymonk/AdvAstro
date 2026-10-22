@@ -71,7 +71,7 @@ stage = "insight"
 title = "More integration time will help most"
 when = "integration_h < 2 and family in ['emission', 'reflection', 'galaxy', 'planetary']"
 confidence = "medium"
-why = "You kept {integration_h:.1f} h. Faint {family} detail improves with the square root of total time: doubling it raises signal-to-noise by about 40 %, more than any processing step can."
+why = "You kept {integration_h:.1f} h. Faint {family_text} detail improves with the square root of total time: doubling it raises signal-to-noise by about 40 %, more than any processing step can."
 
 [[step]]
 id = "calibration_issues"

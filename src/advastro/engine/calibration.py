@@ -23,6 +23,7 @@ from scipy import ndimage
 
 from advastro.engine.session import SubFlag
 from advastro.frame import Frame, FrameMeta
+from advastro.i18n import tr
 from advastro.readers import read_frame
 
 KINDS = ("bias", "darks", "flats", "darkflats")
@@ -75,6 +76,7 @@ class CalNote:
     level: str     # good | info | warn | bad
     kind: str      # which group it is about, or "session"
     text: str
+    id: str = ""   # what the note is about, independent of the language (e.g. darks_match)
 
 
 @dataclass
@@ -362,13 +364,14 @@ def _group(kind: str, metrics: list[CalMetrics]) -> CalGroup:
             limit = tol * abs(common) if attr == "exposure_s" else tol
             if abs(v - common) > limit:
                 g.flags.append(SubFlag(m.file, attr, float(v), float(common),
-                                       f"{label} {v:g} differs from the rest ({common:g})"))
+                                       tr("cal.flag.setting", what=tr(f"cal.word.{label}"),
+                                          value=f"{v:g}", common=f"{common:g}")))
     for m in frames:
         if (m.width, m.height) != (frames[0].width, frames[0].height) and \
                 Counter((f.width, f.height) for f in frames).most_common(1)[0][0] != \
                 (m.width, m.height):
             g.flags.append(SubFlag(m.file, "size", m.width, frames[0].width,
-                                   f"size {m.width}×{m.height} differs from the rest"))
+                                   tr("cal.flag.size", w=m.width, h=m.height)))
 
     # Level outliers
     levels = np.array([m.median_adu for m in frames])
@@ -378,11 +381,11 @@ def _group(kind: str, metrics: list[CalMetrics]) -> CalGroup:
         for m in frames:
             if med > 0 and abs(m.median_adu - med) / med > 0.15:
                 g.flags.append(SubFlag(m.file, "median_adu", m.median_adu, med,
-                                       f"brightness {m.median_adu:.0f} ADU vs {med:.0f} for the "
-                                       "other flats (panel or sky changed)"))
+                                       tr("cal.flag.flat_level", value=f"{m.median_adu:.0f}",
+                                          median=f"{med:.0f}")))
             if m.clipped_pct and m.clipped_pct > 0.01:
                 g.flags.append(SubFlag(m.file, "clipped_pct", m.clipped_pct, 0.01,
-                                       f"{m.clipped_pct:.2f} % of pixels clipped (overexposed)"))
+                                       tr("cal.flag.clipped", pct=f"{m.clipped_pct:.2f}")))
     else:
         noise_med = g.medians.get("noise_adu") or 0.0
         # A dark's level should only wander by a fraction of its noise; more means light
@@ -391,18 +394,18 @@ def _group(kind: str, metrics: list[CalMetrics]) -> CalGroup:
         for m in frames:
             if m.median_adu - med > limit:
                 g.flags.append(SubFlag(m.file, "median_adu", m.median_adu, med + limit,
-                                       f"level {m.median_adu:.0f} ADU vs {med:.0f} (light leak, "
-                                       "or not a dark frame?)"))
+                                       tr("cal.flag.level_high", value=f"{m.median_adu:.0f}",
+                                          median=f"{med:.0f}")))
             elif med - m.median_adu > limit:
                 g.flags.append(SubFlag(m.file, "median_adu", m.median_adu, med - limit,
-                                       f"level {m.median_adu:.0f} ADU vs {med:.0f} (different "
-                                       "offset setting?)"))
+                                       tr("cal.flag.level_low", value=f"{m.median_adu:.0f}",
+                                          median=f"{med:.0f}")))
         if noise_med:
             for m in frames:
                 if m.noise_adu and m.noise_adu > 1.3 * noise_med + 2:
                     g.flags.append(SubFlag(m.file, "noise_adu", m.noise_adu, 1.3 * noise_med,
-                                           f"noise {m.noise_adu:.1f} ADU vs {noise_med:.1f} "
-                                           "for the rest"))
+                                           tr("cal.flag.noise", value=f"{m.noise_adu:.1f}",
+                                              median=f"{noise_med:.1f}")))
     return g
 
 
@@ -431,9 +434,8 @@ def summarize_calibration(metrics: list[CalMetrics], lights: FrameMeta | None = 
                  and HEADER_KIND.get(m.header_type) not in (kind, None)]
         if wrong:
             said = Counter(m.header_type for m in wrong).most_common(1)[0][0]
-            notes.append(CalNote("info", kind, f"{len(wrong)} {_name(kind)} are labelled "
-                                 f"'{said}' in their headers; the folder and the data say "
-                                 f"{_name(kind)}, so AdvAstro uses them as {_name(kind)}."))
+            notes.append(CalNote("info", kind, tr("cal.note.labels", n=len(wrong),
+                                                  kind=_name(kind), said=said), "labels"))
 
     # --- darks against the lights
     darks = groups.get("darks")
@@ -441,52 +443,48 @@ def summarize_calibration(metrics: list[CalMetrics], lights: FrameMeta | None = 
         problems = []
         exp = darks.setting("exposure_s")
         if exp and lights.exposure_s and abs(exp - lights.exposure_s) > 0.01 * lights.exposure_s:
-            problems.append(f"exposure {exp:g} s vs lights {lights.exposure_s:g} s")
-        for attr, label in (("gain", "gain"), ("offset", "offset"), ("binning", "binning")):
+            problems.append(tr("cal.vs_lights", what=tr("cal.word.exposure"),
+                               value=f"{exp:g} s", lights=f"{lights.exposure_s:g} s"))
+        for attr in ("gain", "offset", "binning"):
             dv, lv = darks.setting(attr), getattr(lights, attr)
             if dv is not None and lv is not None and dv != lv:
-                problems.append(f"{label} {dv:g} vs lights {lv:g}")
+                problems.append(tr("cal.vs_lights", what=tr(f"cal.word.{attr}"),
+                                   value=f"{dv:g}", lights=f"{lv:g}"))
         dt = _median(m.temperature_c for m in darks.frames)
         if dt is not None and lights.temperature_c is not None \
                 and abs(dt - lights.temperature_c) > 2.0:
-            problems.append(f"temperature {dt:.0f} °C vs lights {lights.temperature_c:.0f} °C")
+            problems.append(tr("cal.vs_lights", what=tr("cal.word.temperature"),
+                               value=f"{dt:.0f} °C", lights=f"{lights.temperature_c:.0f} °C"))
         if problems:
-            notes.append(CalNote("bad", "darks", "Darks do not match the lights: "
-                                 + "; ".join(problems) + "."))
+            notes.append(CalNote("bad", "darks", tr("cal.note.darks_mismatch",
+                                                    problems="; ".join(problems)),
+                                 "darks_mismatch"))
         else:
             parts = [f"{exp:g} s" if exp else None,
-                     f"gain {darks.setting('gain'):g}" if darks.setting("gain") is not None
-                     else None,
-                     f"offset {darks.setting('offset'):g}" if darks.setting("offset") is not None
-                     else None,
+                     f"{tr('cal.word.gain')} {darks.setting('gain'):g}"
+                     if darks.setting("gain") is not None else None,
+                     f"{tr('cal.word.offset')} {darks.setting('offset'):g}"
+                     if darks.setting("offset") is not None else None,
                      f"{dt:.0f} °C" if dt is not None else None]
-            notes.append(CalNote("good", "darks", "Darks match the lights ("
-                                 + ", ".join(p for p in parts if p) + ")."))
+            notes.append(CalNote("good", "darks", tr("cal.note.darks_match",
+                                                     parts=", ".join(p for p in parts if p)),
+                                 "darks_match"))
         d_time, l_time = _time(first("darks").time if first("darks") else None), \
             _time(lights_time)
         if d_time and l_time and abs((l_time - d_time).days) > 180:
-            notes.append(CalNote("info", "darks", f"The darks are {abs((l_time - d_time).days)} "
-                                 "days older than the lights. A dark library is fine, but "
-                                 "refresh it about once a year: sensors change slowly."))
+            notes.append(CalNote("info", "darks", tr("cal.note.darks_old",
+                                                     days=abs((l_time - d_time).days)),
+                                 "darks_old"))
 
     # --- flats
     flats = groups.get("flats")
     if flats:
         lvl = flats.medians.get("level_pct")
         if lvl is not None:
-            if lvl < 15:
-                notes.append(CalNote("warn", "flats", f"Flats are dim ({lvl:.0f} % of full "
-                                     "scale). Aim for 30–60 % so their noise does not add to "
-                                     "the lights."))
-            elif lvl > 75:
-                notes.append(CalNote("bad", "flats", f"Flats are very bright ({lvl:.0f} % of "
-                                     "full scale) and may be non-linear. Aim for 30–60 %."))
-            elif lvl < 25:
-                notes.append(CalNote("info", "flats", f"Flats reach {lvl:.0f} % of full scale: "
-                                     "usable, though 30–60 % gives cleaner masters."))
-            else:
-                notes.append(CalNote("good", "flats", f"Flat brightness is good ({lvl:.0f} % "
-                                     "of full scale)."))
+            key, level = ("dim", "warn") if lvl < 15 else ("bright", "bad") if lvl > 75 else \
+                ("low", "info") if lvl < 25 else ("good", "good")
+            notes.append(CalNote(level, "flats", tr(f"cal.note.flat_{key}", pct=f"{lvl:.0f}"),
+                                 f"flat_{key}"))
         chans = [m.channel_levels for m in flats.frames if m.channel_levels]
         if chans and len(chans[0]) == 3:
             avg = np.mean(np.array(chans), axis=0)
@@ -494,38 +492,35 @@ def summarize_calibration(metrics: list[CalMetrics], lights: FrameMeta | None = 
             lo, hi = int(np.argmin(avg)), int(np.argmax(avg))
             names = ("red", "green", "blue")
             if avg[lo] < 0.45 * avg[hi]:
-                notes.append(CalNote("info", "flats", f"The flats are much dimmer in "
-                                     f"{names[lo]} ({avg[lo] / sat * 100:.0f} %) than in "
-                                     f"{names[hi]} ({avg[hi] / sat * 100:.0f} %). That is normal "
-                                     "for many light sources, but keep the dimmest channel above "
-                                     "about 10 %."))
+                notes.append(CalNote("info", "flats", tr(
+                    "cal.note.flat_channels", lo=tr(f"cal.word.{names[lo]}"),
+                    lo_pct=f"{avg[lo] / sat * 100:.0f}", hi=tr(f"cal.word.{names[hi]}"),
+                    hi_pct=f"{avg[hi] / sat * 100:.0f}"), "flat_channels"))
         vig = flats.medians.get("vignetting_pct")
         if vig is not None:
-            notes.append(CalNote("info", "flats", f"Vignetting: the corners get about "
-                                 f"{vig:.0f} % less light than the centre; the flats correct "
-                                 "this."))
+            notes.append(CalNote("info", "flats", tr("cal.note.vignetting", pct=f"{vig:.0f}"),
+                                 "vignetting"))
         dust = flats.medians.get("dust_spots")
         if dust:
             depth = flats.medians.get("dust_depth_pct") or 0
-            notes.append(CalNote("info", "flats", f"About {dust:.0f} dust shadows show in the "
-                                 f"flats (deepest {depth:.1f} %). They are corrected as long as "
-                                 "nothing in the optical train moved between lights and flats."))
+            notes.append(CalNote("info", "flats", tr("cal.note.dust", n=f"{dust:.0f}",
+                                                     depth=f"{depth:.1f}"), "dust"))
         f_time, l_time = _time(first("flats").time if first("flats") else None), \
             _time(lights_time)
         if f_time and l_time:
             days = abs((l_time - f_time).total_seconds()) / 86400
             if days > 1.5:
-                notes.append(CalNote("warn", "flats", f"The flats are from a different night "
-                                     f"({days:.0f} days apart). They only match if the camera "
-                                     "was not rotated, refocused or cleaned in between."))
+                notes.append(CalNote("warn", "flats", tr("cal.note.flats_other_night",
+                                                         days=f"{days:.0f}"), "flats_night"))
             else:
-                notes.append(CalNote("good", "flats", "Flats are from the same night as the "
-                                     "lights."))
+                notes.append(CalNote("good", "flats", tr("cal.note.flats_same_night"),
+                                     "flats_night"))
         if lights is not None:
             fb = flats.setting("binning")
             if fb is not None and lights.binning is not None and fb != lights.binning:
-                notes.append(CalNote("bad", "flats", f"Flats are binned {fb:g}x but the lights "
-                                     f"{lights.binning:g}x."))
+                notes.append(CalNote("bad", "flats", tr("cal.note.flat_binning", flats=f"{fb:g}",
+                                                        lights=f"{lights.binning:g}"),
+                                     "flat_binning"))
 
     # --- flat darks against the flats, or bias as the substitute
     fd = groups.get("darkflats")
@@ -535,29 +530,35 @@ def summarize_calibration(metrics: list[CalMetrics], lights: FrameMeta | None = 
         fg, dg = flats.setting("gain"), fd.setting("gain")
         problems = []
         if fe and de and abs(fe - de) > 0.05 * fe:
-            problems.append(f"exposure {de:g} s vs flats {fe:g} s")
+            problems.append(tr("cal.vs_flats", what=tr("cal.word.exposure"), value=f"{de:g} s",
+                               flats=f"{fe:g} s"))
         if fg is not None and dg is not None and fg != dg:
-            problems.append(f"gain {dg:g} vs flats {fg:g}")
-        notes.append(CalNote("bad", "darkflats", "Flat darks do not match the flats: "
-                             + "; ".join(problems) + ".") if problems else
-                     CalNote("good", "darkflats", f"Flat darks match the flats "
-                             f"({fe:g} s, gain {fg:g})." if fe and fg is not None else
-                             "Flat darks match the flats."))
+            problems.append(tr("cal.vs_flats", what=tr("cal.word.gain"), value=f"{dg:g}",
+                               flats=f"{fg:g}"))
+        if problems:
+            notes.append(CalNote("bad", "darkflats", tr("cal.note.flatdarks_mismatch",
+                                                        problems="; ".join(problems)),
+                                 "flatdarks_mismatch"))
+        else:
+            parts = f" ({fe:g} s, {tr('cal.word.gain')} {fg:g})" if fe and fg is not None else ""
+            notes.append(CalNote("good", "darkflats", tr("cal.note.flatdarks_match", parts=parts),
+                                 "flatdarks_match"))
     elif flats and not fd and not bias:
-        notes.append(CalNote("bad", "flats", "Neither flat darks nor bias were found, so the "
-                             "flats cannot be calibrated properly."))
+        notes.append(CalNote("bad", "flats", tr("cal.note.flats_uncalibrated"),
+                             "flats_uncalibrated"))
     if bias:
         be = bias.setting("exposure_s")
         if be and be > 0.1:
-            notes.append(CalNote("info", "bias", f"The bias frames are {be:g} s exposures, so "
-                                 "they behave as short darks. That is fine with flats of the "
-                                 "same exposure."))
+            notes.append(CalNote("info", "bias", tr("cal.note.bias_long", exp=f"{be:g}"),
+                                 "bias_long"))
         if lights is not None:
             for attr, label in (("gain", "gain"), ("offset", "offset")):
                 bv, lv = bias.setting(attr), getattr(lights, attr)
                 if bv is not None and lv is not None and bv != lv:
-                    notes.append(CalNote("warn", "bias", f"Bias {label} {bv:g} differs from the "
-                                         f"lights ({lv:g})."))
+                    notes.append(CalNote("warn", "bias", tr("cal.note.bias_setting",
+                                                            what=tr(f"cal.word.{label}"),
+                                                            value=f"{bv:g}", lights=f"{lv:g}"),
+                                         "bias_setting"))
 
     # --- light leaks: dark-type frames whose level climbs during the series
     for kind in ("darks", "darkflats", "bias"):
@@ -569,12 +570,10 @@ def summarize_calibration(metrics: list[CalMetrics], lights: FrameMeta | None = 
         if noise and max(levels) - min(levels) > 2.0 * noise:
             ordered = sorted(g.frames, key=lambda m: m.time or m.file)
             rising = ordered[-1].median_adu - ordered[0].median_adu > noise
-            notes.append(CalNote("warn", kind, f"The {_name(kind)} vary in level from "
-                                 f"{min(levels):.0f} to {max(levels):.0f} ADU"
-                                 + (", rising through the series" if rising else "") +
-                                 ". That points to light reaching the sensor (a light leak, or "
-                                 "darks taken in daylight). Cap the telescope and cover the "
-                                 "camera, and leave the brightest frames out."))
+            notes.append(CalNote("warn", kind, tr(
+                "cal.note.leak", kind=_name(kind), lo=f"{min(levels):.0f}",
+                hi=f"{max(levels):.0f}", rising=tr("cal.note.leak_rising") if rising else ""),
+                "leak"))
 
     # --- dark current features
     for kind in ("darks", "darkflats", "bias"):
@@ -586,28 +585,33 @@ def summarize_calibration(metrics: list[CalMetrics], lights: FrameMeta | None = 
         if kind == "darks" and noise and glow > 3 * noise:
             where = Counter(m.glow_where for m in g.frames if m.glow_where).most_common(1)
             side = where[0][0] if where else "edge"
-            notes.append(CalNote("info", "darks", f"Amp glow: the {side} is {glow:.0f} ADU "
-                                 "brighter than the centre. Matching darks remove it; avoid "
-                                 "dark scaling or optimization."))
+            notes.append(CalNote("info", "darks", tr(
+                "cal.note.glow", side=tr(f"gui.calinfo.region.{_REGION_KEY.get(side, 'centre')}"),
+                adu=f"{glow:.0f}"), "glow"))
         band = g.medians.get("banding_adu") or 0
         if noise and band > 0.3 * noise:
-            notes.append(CalNote("warn", kind, f"Row or column banding of {band:.1f} ADU in the "
-                                 f"{_name(kind)}; more frames give a smoother master."))
+            notes.append(CalNote("warn", kind, tr("cal.note.banding", adu=f"{band:.1f}",
+                                                  kind=_name(kind)), "banding"))
         hot = g.medians.get("hot_pct")
         if kind == "darks" and hot is not None:
-            notes.append(CalNote("info", "darks", f"{g.medians['hot_pixels']:.0f} hot pixels "
-                                 f"({hot:.3f} % of the sensor) at this exposure and temperature."))
+            notes.append(CalNote("info", "darks", tr("cal.note.hot",
+                                                     n=f"{g.medians['hot_pixels']:.0f}",
+                                                     pct=f"{hot:.3f}"), "hot"))
 
     # --- frame counts
     for kind, minimum, ideal in (("darks", 15, 30), ("flats", 15, 30), ("bias", 20, 50),
                                  ("darkflats", 15, 30)):
         g = groups.get(kind)
         if g and g.frames and len(g.frames) < minimum and not g.masters:
-            notes.append(CalNote("warn", kind, f"Only {len(g.frames)} {_name(kind)}: {ideal} or "
-                                 "more give a master with less noise."))
+            notes.append(CalNote("warn", kind, tr("cal.note.few", n=len(g.frames),
+                                                  kind=_name(kind), ideal=ideal), "few"))
     return summary
 
 
+_REGION_KEY = {"top left": "upper_left", "top right": "upper_right", "bottom left": "lower_left",
+               "bottom right": "lower_right", "left edge": "left", "right edge": "right",
+               "top edge": "top", "bottom edge": "bottom"}
+
+
 def _name(kind: str) -> str:
-    return {"bias": "bias frames", "darks": "darks", "flats": "flats",
-            "darkflats": "flat darks"}[kind]
+    return tr(f"cal.kind.{kind}")

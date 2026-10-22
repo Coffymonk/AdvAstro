@@ -24,6 +24,7 @@ import numpy as np
 from astropy.io import fits as afits
 
 from advastro.frame import Frame
+from advastro.i18n import tr
 
 ASTAP_DB = re.compile(r"^([a-z]\d\d)_\d{4}\.\w+$", re.IGNORECASE)
 
@@ -107,8 +108,8 @@ def field_from_wcs_header(header: dict, width: int, height: int) -> SkyField | N
         ra=float(center[0]) % 360, dec=float(center[1]),
         width_deg=width * scale / 3600, height_deg=height * scale / 3600,
         scale_arcsec=scale, rotation_deg=rotation, level="solved",
-        source="ASTAP solution in the file" if header.get("PLTSOLVD") else
-        "solution in the file header",
+        source=tr("sky.src.astap_file") if header.get("PLTSOLVD") else
+        tr("sky.src.header"),
         flipped=flipped)
 
 
@@ -121,7 +122,7 @@ def field_from_pointing(frame: Frame, scale_arcsec: float | None) -> SkyField | 
     h, w = frame.data.shape[-2:]
     return SkyField(ra=m.ra_deg % 360, dec=m.dec_deg, width_deg=w * scale / 3600,
                     height_deg=h * scale / 3600, scale_arcsec=scale, rotation_deg=None,
-                    level="pointing", source="telescope pointing in the file header")
+                    level="pointing", source=tr("sky.src.pointing_header"))
 
 
 # ---- 1b: ASTAP -------------------------------------------------------------------------
@@ -244,9 +245,9 @@ def solve_astap(frame: Frame, install: AstapInstall, scale_hint: float | None = 
                 downsample: int = 0, auto_fov: bool = False) -> SkyField:
     """Plate solve with ASTAP on a temporary FITS copy; never writes next to user files."""
     if not install.executable:
-        raise SolveError("ASTAP was not found")
+        raise SolveError(tr("sky.err.no_astap"))
     if not install.databases:
-        raise SolveError("No ASTAP star database was found")
+        raise SolveError(tr("sky.err.no_db"))
     img, factor = _solver_image(frame)
     h, w = img.shape
     m = frame.meta
@@ -272,16 +273,16 @@ def solve_astap(frame: Frame, install: AstapInstall, scale_hint: float | None = 
             subprocess.run(cmd, capture_output=True, timeout=timeout_s,
                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         except subprocess.TimeoutExpired as exc:
-            raise SolveError(f"ASTAP did not finish within {timeout_s:.0f} s") from exc
+            raise SolveError(tr("sky.err.timeout", s=f"{timeout_s:.0f}")) from exc
         except OSError as exc:
-            raise SolveError(f"Could not start ASTAP: {exc}") from exc
+            raise SolveError(tr("sky.err.start", error=exc)) from exc
         ini_path = Path(tmp) / "solution.ini"
         if not ini_path.exists():
-            raise SolveError("ASTAP did not write a result")
+            raise SolveError(tr("sky.err.no_result"))
         ini = parse_astap_ini(ini_path.read_text(errors="replace"))
     if ini.get("PLTSOLVD", "F").upper() != "T":
-        reason = ini.get("ERROR") or ini.get("WARNING") or "no match with the star database"
-        raise SolveError(f"Plate solving failed: {reason}")
+        reason = ini.get("ERROR") or ini.get("WARNING") or tr("sky.err.no_match")
+        raise SolveError(tr("sky.err.failed", reason=reason))
     try:
         ra, dec = float(ini["CRVAL1"]), float(ini["CRVAL2"])
         if "CD1_1" in ini:
@@ -293,7 +294,7 @@ def solve_astap(frame: Frame, install: AstapInstall, scale_hint: float | None = 
             cd = np.array([[c1 * math.cos(rot), -c2 * math.sin(rot)],
                            [c1 * math.sin(rot), c2 * math.cos(rot)]])
     except (KeyError, ValueError) as exc:
-        raise SolveError("ASTAP result could not be read") from exc
+        raise SolveError(tr("sky.err.unreadable")) from exc
     binned_scale = math.sqrt(abs(np.linalg.det(cd))) * 3600
     try:
         crpix = ((float(ini["CRPIX1"]) - 0.5) * factor + 0.5,

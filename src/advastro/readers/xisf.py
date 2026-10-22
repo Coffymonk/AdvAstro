@@ -18,6 +18,7 @@ import numpy as np
 from astropy.io import fits as afits
 
 from advastro.frame import Frame, FrameMeta
+from advastro.i18n import tr
 from advastro.readers.fits import parse_header
 
 SIGNATURE = b"XISF0100"
@@ -59,16 +60,16 @@ def _decompress(raw: bytes, spec: str | None) -> bytes:
         try:
             import lz4.block
         except ImportError as exc:
-            raise XISFError("LZ4-compressed XISF needs the 'lz4' package") from exc
+            raise XISFError(tr("read.err.package", codec="LZ4", package="lz4")) from exc
         out = lz4.block.decompress(raw, uncompressed_size=size)
     elif codec == "zstd":
         try:
             import zstandard
         except ImportError as exc:
-            raise XISFError("Zstandard-compressed XISF needs the 'zstandard' package") from exc
+            raise XISFError(tr("read.err.package", codec="Zstandard", package="zstandard")) from exc
         out = zstandard.ZstdDecompressor().decompress(raw, max_output_size=size)
     else:
-        raise XISFError(f"Unsupported XISF compression: {codec}")
+        raise XISFError(tr("read.err.compression", codec=codec))
     if shuffled:
         out = _unshuffle(out, int(parts[2]) if len(parts) > 2 else 1)
     return out
@@ -81,7 +82,7 @@ def _block(fh, location: str, image_el: ET.Element) -> bytes:
         fh.seek(pos)
         data = fh.read(size)
         if len(data) != size:
-            raise XISFError("XISF file is truncated")
+            raise XISFError(tr("read.err.truncated"))
         return data
     if kind == "inline":
         encoding = rest[0] if rest else "base64"
@@ -90,9 +91,9 @@ def _block(fh, location: str, image_el: ET.Element) -> bytes:
     if kind == "embedded":
         data_el = next((c for c in image_el if _tag(c) == "Data"), None)
         if data_el is None:
-            raise XISFError("Embedded XISF data block is missing")
+            raise XISFError(tr("read.err.block"))
         return base64.b64decode((data_el.text or "").strip())
-    raise XISFError(f"Unsupported XISF data location: {kind}")
+    raise XISFError(tr("read.err.location", kind=kind))
 
 
 def _keyword_value(text: str):
@@ -120,7 +121,7 @@ def _properties(image_el: ET.Element) -> dict[str, str]:
 def read_header(path: Path) -> tuple[ET.Element, int]:
     with open(path, "rb") as fh:
         if fh.read(8) != SIGNATURE:
-            raise XISFError(f"{path.name} is not an XISF file")
+            raise XISFError(tr("read.err.not_xisf", name=path.name))
         (length,) = struct.unpack("<I", fh.read(4))
         fh.read(4)  # reserved
         xml = fh.read(length)
@@ -133,7 +134,7 @@ def read(path: Path) -> Frame:
     root, _ = read_header(path)
     image_el = next((el for el in root.iter() if _tag(el) == "Image"), None)
     if image_el is None:
-        raise XISFError(f"No image in {path.name}")
+        raise XISFError(tr("read.err.no_image", name=path.name))
 
     geometry = [int(x) for x in image_el.get("geometry", "").split(":")]
     if len(geometry) < 3:
@@ -141,7 +142,7 @@ def read(path: Path) -> Frame:
     width, height, channels = geometry[0], geometry[1], geometry[2]
     fmt = image_el.get("sampleFormat", "UInt16")
     if fmt not in _DTYPES:
-        raise XISFError(f"Unsupported XISF sample format: {fmt}")
+        raise XISFError(tr("read.err.sample", fmt=fmt))
     dtype = np.dtype(_DTYPES[fmt]).newbyteorder("<")
 
     with open(path, "rb") as fh:
@@ -149,7 +150,7 @@ def read(path: Path) -> Frame:
     data = np.frombuffer(_decompress(raw, image_el.get("compression")), dtype=dtype)
     expected = width * height * channels
     if data.size != expected:
-        raise XISFError(f"{path.name}: expected {expected} samples, found {data.size}")
+        raise XISFError(tr("read.err.samples", name=path.name, expected=expected, found=data.size))
     if image_el.get("pixelStorage", "Planar") == "Normal":
         data = data.reshape(height, width, channels).transpose(2, 0, 1)
     else:

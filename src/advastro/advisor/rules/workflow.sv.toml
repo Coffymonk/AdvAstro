@@ -1,0 +1,191 @@
+# Svensk text för workflow.toml. Bara text: villkor, parametrar och ordning kommer från
+# den engelska filen. Varje [[step]] matchas mot den engelska med samma id.
+
+[[step]]
+id = "identify_target"
+title = "Berätta för AdvAstro vad du fotograferat"
+why = "Objektet är okänt, så råden nedan är allmänna. Plattlös sessionen (Lös) eller ange objektet i FITS-nyckelordet OBJECT eller i mappnamnet för att få steg för just ditt objekt."
+
+[[step]]
+id = "position_approximate"
+title = "Plattlös för exakta positioner"
+why = "Positionen kommer från teleskopets riktning, som kan vara fel med flera bågminuter. En plattlösning bekräftar objektet och möjliggör spektrofotometrisk färgkalibrering."
+
+[[step]]
+id = "mosaic"
+title = "{target_label} är större än ditt fält"
+why = "Objektet sträcker sig över ungefär {coverage_pct:.0f} % av fältets långsida ({fov_w:.0f}′ × {fov_h:.0f}′). En mosaik med {panels} paneler skulle visa allt; för den här sessionen, lägg bearbetningen kring det ljusaste området och räkna med att nebulosan når kanterna."
+
+[[step]]
+id = "small_target"
+title = "{target_label} är litet i det här fältet"
+why = "Objektet täcker bara ungefär {coverage_pct:.0f} % av fältets bredd. Beskär generöst runt det efter staplingen; en längre brännvidd (eller drizzle, om du dithrar) skulle visa fler detaljer."
+
+[[step]]
+id = "milky_way_field"
+title = "Stjärnrikt Vintergatsfält"
+why = "Fältet ligger {abs_b:.0f}° från det galaktiska planet, så det är fullt av stjärnor. Att bearbeta stjärnorna för sig (ta bort dem och sedan lägga tillbaka dem med lägre styrka) hindrar dem från att ta över nebulosan."
+
+[[step]]
+id = "tracking"
+title = "Stjärnorna är utdragna genom hela sessionen"
+why = "Medianexcentriciteten är {ecc:.2f} (0 är runt). Det tyder på följning, guidning, balans eller lutning snarare än några enstaka dåliga delbilder; kontrollera guidningsgrafer och polinställning."
+
+[[step]]
+id = "more_integration"
+title = "Mer integrationstid hjälper mest"
+why = "Du behöll {integration_h:.1f} h. Svaga detaljer i {family_text} blir bättre med kvadratroten ur den totala tiden: dubbel tid höjer signal-brusförhållandet med ungefär 40 %, mer än något bearbetningssteg kan."
+
+[[step]]
+id = "calibration_issues"
+title = "Kontrollera dina kalibreringsbilder"
+why = "{cal_issues}"
+
+[[step]]
+id = "no_flats"
+title = "Inga flats hittades"
+why = "Utan flats blir vinjettering och dammskuggor kvar i bilden och är svåra att ta bort senare. Ta flats med samma fokus och kamerarotation, även efter sessionen."
+
+[[step]]
+id = "no_darks"
+title = "Inga darks hittades"
+why = "Darks tar bort amp glow och heta pixlar. Utan dem får kosmetisk korrigering och dithring göra jobbet; överväg ett dark-bibliotek vid {temp_text} och {exposure_s:.0f} s."
+
+[[step]]
+id = "select_subs"
+title = "Stapla bara de delbilder du behållit"
+why = "{rejected} av {total} delbilder lades åt sidan eftersom de sticker ut från sessionen (stjärnstorlek, form, antal stjärnor eller himmelsljus). Exportera listan över behållna och använd bara de filerna."
+
+[[step]]
+id = "reference_frame"
+title = "Använd delbild {best_sub_short} som referens vid registreringen"
+why = "Den har de skarpaste stjärnorna av de behållna delbilderna (FWHM {best_fwhm:.2f} px), vilket ger registreringen den bästa mallen."
+
+[[step]]
+id = "calibrate"
+title = "Kalibrera med {cal_list}"
+why = "Kalibreringsbilder hittades bredvid ljusbilderna: {cal_found}. Kalibrera dina flats med {flat_cal}."
+
+[[step]]
+id = "cosmetic"
+title = "Kosmetisk korrigering av heta och kalla pixlar"
+why = "CMOS-sensorer har alltid några heta pixlar; att ta bort dem före debayering hindrar dem från att bli färgade prickar.{cosmetic_extra}"
+
+[[step]]
+id = "debayer"
+title = "Debayra färgdatan ({bayer})"
+why = "Din kamera registrerar färg genom en {bayer}-filtermatris; debayering efter kalibreringen bygger upp pixlar med full färg."
+
+[[step]]
+id = "register"
+title = "Registrera (passa ihop) delbilderna"
+why = "Stjärnorna måste ligga rätt med precision under en pixel innan staplingen.{drift_note}"
+
+[[step]]
+id = "local_normalization"
+title = "Använd lokal normalisering"
+why = "Himlens gradienter ändras under natten (spridning {gradient_spread:.1f} % mellan delbilder{bortle_text}). Lokal normalisering jämnar ut dem före staplingen så att avvisningen verkar på verkliga avvikare."
+
+[[step]]
+id = "integrate"
+title = "Integrera med {rejection}"
+why = "{kept} delbilder passar bäst med {rejection}: {rejection_reason}"
+[step.params]
+rejection_reason = "= 'med få delbilder är statistiken osäker och enkla percentilgränser är säkrast.' if kept < 8 else ('robust mot avvikare och behåller det mesta av datan.' if kept < 20 else ('hanterar gradientändringar mellan många delbilder bra.' if kept < 30 else 'det mest exakta testet när det finns många delbilder.'))"
+
+[[step]]
+id = "drizzle"
+title = "Drizzle {drizzle_scale}x"
+why = "{drizzle_reason}"
+
+[[step]]
+id = "dither_next_time"
+title = "Dithra nästa gång"
+why = "Delbilderna flyttade sig inte mellan exponeringarna (medianförskjutning {dither_px:.1f} px). Dithring var 1–3:e delbild tar bort vandrande brus och fläckigt färgbrus, och gör drizzle möjligt."
+
+[[step]]
+id = "crop"
+title = "Beskär staplingskanterna"
+why = "Registreringen lämnar smala kanter med färre delbilder; de stör gradientborttagning och färgkalibrering."
+
+[[step]]
+id = "gradient"
+title = "Ta bort bakgrundsgradienten{gradient_strength}"
+why = "{gradient_reason}"
+
+[[step]]
+id = "solve_image"
+title = "Plattlös den staplade bilden"
+why = "{solve_reason}"
+
+[[step]]
+id = "color_calibration"
+title = "Spektrofotometrisk färgkalibrering"
+why = "{color_reason}"
+
+[[step]]
+id = "deconvolution"
+title = "Skärp med dekonvolution"
+why = "Stjärnorna är {fwhm_px:.1f} px breda, tillräckligt många pixlar per stjärna för att dekonvolution ska kunna ta fram detaljer{deconv_target}."
+
+[[step]]
+id = "skip_deconvolution"
+title = "Hoppa över dekonvolution"
+why = "Stjärnorna är bara {fwhm_px:.1f} px breda (undersamplade); dekonvolution har för få pixlar per stjärna att arbeta med och ger mest artefakter."
+
+[[step]]
+id = "noise_linear"
+title = "Minska bruset (linjärt)"
+why = "Med {integration_h:.1f} h data behåller en {nr_word} brusreducering svaga detaljer; att göra den före sträckningen gör att den verkar på det verkliga bruset."
+[step.params]
+nr_word = "= 'kraftig' if integration_h < 2 else ('måttlig' if integration_h < 5 else 'lätt')"
+
+[[step]]
+id = "star_separation"
+title = "Separera stjärnorna från nebulosan"
+why = "Att bearbeta {target_label} utan stjärnor låter dig sträcka och skärpa nebulosan hårt medan stjärnorna förblir små och naturliga."
+
+[[step]]
+id = "narrowband_extract"
+title = "Dela upp Hα och OIII ur din dual-band-data"
+why = "Ett dual-band-filter på en färgkamera registrerar Hα i de röda pixlarna och OIII i de gröna och blå. Att extrahera dem ger två rena kanaler för en {palette_text}-palett.{sho_note}"
+
+[[step]]
+id = "stretch"
+title = "Sträck till icke-linjär"
+why = "{stretch_reason}"
+
+[[step]]
+id = "stretch_stars"
+title = "Sträck stjärnorna för sig"
+why = "En mild arcsinh-sträckning håller stjärnornas färg och storlek under kontroll medan den stjärnlösa bilden får den kraftigare sträckningen."
+
+[[step]]
+id = "hdr"
+title = "Rädda den ljusa kärnan"
+why = "{target_label} har en ljus kärna (magnitud {target_mag:.1f}) som mättas efter sträckningen; ett HDR-steg i flera skalor tar tillbaka dess struktur."
+
+[[step]]
+id = "local_contrast"
+title = "Ta fram strukturen med lokal kontrast"
+why = "{contrast_reason}"
+
+[[step]]
+id = "saturation"
+title = "Öka färgmättnaden"
+why = "{saturation_reason}"
+
+[[step]]
+id = "star_recombine"
+title = "Lägg tillbaka stjärnorna"
+why = "En screen-blandning lägger tillbaka stjärnorna utan hårda kanter; sänk deras styrka om fältet är tätt{milky_way_note}."
+
+[[step]]
+id = "cluster_stars"
+title = "Håll stjärnfärgerna naturliga"
+why = "I en stjärnhop är stjärnorna motivet: hoppa över stjärnborttagning, sträck försiktigt (arcsinh behåller färgen) och undvik kraftig skärpning, som får ljusa stjärnor att svälla."
+
+[[step]]
+id = "export"
+title = "Spara mastern och exportera för att dela"
+why = "Behåll mastern med full bitdjup (XISF eller 32-bitars FITS) för ny bearbetning; dela en 16-bitars TIFF eller en JPEG med hög kvalitet."

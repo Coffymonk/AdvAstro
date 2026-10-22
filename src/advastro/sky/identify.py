@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 
+from advastro.i18n import tr
 from advastro.sky.catalog import SkyObject, load
 from advastro.sky.solve import SkyField
 
@@ -99,7 +100,7 @@ def identify(sky: SkyField | None, name_hints: list[str] | None = None,
     if sky is None:
         if hinted:
             const, b = _sky_facts(hinted.ra, hinted.dec)
-            return TargetReport(hinted, "name", f"name “{hint_source}”", None, [], const, b)
+            return TargetReport(hinted, "name", tr("sky.src.name", name=hint_source), None, [], const, b)
         return TargetReport(None, "none", "no position or name")
 
     margin = 0.0 if sky.level == "solved" else 0.15 * min(sky.width_deg, sky.height_deg)
@@ -125,5 +126,5 @@ def identify(sky: SkyField | None, name_hints: list[str] | None = None,
         target = hinted
     others = [o for o, _ in ranked if target is None or o.id != target.id][:12]
     const, b = _sky_facts(sky.ra, sky.dec)
-    source = sky.source if sky.level == "solved" else "telescope pointing"
+    source = sky.source if sky.level == "solved" else tr("sky.src.pointing")
     return TargetReport(target, sky.level, source, sky, others, const, b)

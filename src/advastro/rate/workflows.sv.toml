@@ -1,0 +1,214 @@
+# Svensk text för workflows.toml. Varje [[stage]] matchas mot den engelska med samma id;
+# kinds, fixes och linear kommer från den engelska filen.
+
+[intro]
+all = "Det här är en komplett bearbetningsväg från den staplade mastern till den färdiga bilden, anpassad till {object}. Steg märkta 'Din bild' åtgärdar något Rate my pic hittade i den här bilden. Håll ordningen: vissa steg fungerar bara på linjär data (före sträckningen), andra bara efter den."
+galaxy = "Galaxer är små, med en ljus kärna, svaga yttre armar och en halo som tonar ut i himlen. Arbetet ligger i en helt plan bakgrund (så att halon överlever), skarpa detaljer i armarna, en kärna som inte är utbränd och diskreta, sanna färger."
+emission = "Emissionsnebulosor lyser rött i väte-alfa och blågrönt i syre. De är ofta stora och fyller bilden, så bakgrundsborttagningen får inte ta bort nebulosa, och stjärnorna dämpas oftast så att gasen hamnar i centrum."
+reflection = "Reflektionsnebulosor är stoft som lyses upp av närliggande stjärnor: svaga, blå och fulla av fin struktur. Bra färgkalibrering och en mild, försiktig sträckning är viktigast; det svaga stoftet ligger strax över bakgrunden."
+planetary = "Planetariska nebulosor är små och ljusa, med ett mycket ljusare centrum än de yttre skalen. Arbetet ligger i att lösa upp den lilla strukturen (dekonvolution), hindra den ljusa inre delen från att brännas ut och en tät beskärning."
+dark = "Mörka nebulosor är stoftmoln som syns mot stjärnor och lysande gas. Stoftet syns bara om bakgrunden inte är för mörk och stjärnorna inte dränker det, så stjärnreducering och en mild sträckning är avgörande."
+cluster = "I en stjärnhop är stjärnorna motivet. Deras storlek, skärpa och färg avgör bilden, så stjärnorna tas aldrig bort; en sträckning som behåller stjärnfärgerna är det viktigaste steget."
+globular = "En klotformig stjärnhop är ett klot av hundratusentals stjärnor med en mycket tät kärna. Kärnan bränns lätt ut till en vit klump; dekonvolution och en försiktig sträckning löser upp stjärnor ända in i centrum."
+milkyway = "Ett brett Vintergatsfält är fullt av stjärnor, stoft och lysande gas, oftast fotograferat med ett kort objektiv. Gradienter från ljusföroreningar, objektivets vinjettering och det enorma antalet stjärnor är de stora utmaningarna."
+unknown = "Välj objekttyp ovan för ett arbetsflöde anpassat till ditt objekt; det här är den allmänna vägen."
+
+[[stage]]
+id = "crop"
+title = "Beskär staplingskanterna"
+explain = "Där delbilderna inte överlappade (dithring, drift, meridianvändning) har stapeln mörka eller brusiga kanter. Beskär dem först: alla senare verktyg mäter bilden, och kanterna förvirrar mätningarna."
+pixinsight = [
+  "DynamicCrop: dra en ruta inom det rena området (använd en kraftig STF för att se kanterna) och sedan Execute.",
+  "Nästa gång kan WBPP göra det: kryssa i Autocrop i inställningarna för Integration.",
+]
+siril = [
+  "Rita en markering inom det rena området, högerklicka › Crop.",
+  "Eller använd beskärningsalternativet när du staplar den registrerade sekvensen.",
+]
+
+[[stage]]
+id = "background"
+title = "Ta bort gradienter (bakgrundsextrahering)"
+explain = "Ljusföroreningar, månljus och kvarvarande vinjettering lägger till ett jämnt sken som är ljusare på ena sidan. Verktyget bygger en modell av skenet från punkter du markerar som 'tom himmel' och drar ifrån den. Det måste göras medan bilden är linjär, före varje sträckning."
+pixinsight = [
+  "GraXpert (ett gratis program, finns även som PixInsight-process): Background Extraction med AI-metoden, Correction Subtraction, Smoothing ungefär 0,5.",
+  "Eller DynamicBackgroundExtraction: klicka Generate med 15–25 punkter per rad och ta sedan bort varje punkt som ligger på en stjärna, nebulosa eller galax. Correction: Subtraction. Kör och titta på bakgrundsmodellen den skapar: den ska vara en jämn lutning.",
+  "Kontrollera resultatet med en kraftig STF: himlen ska se jämn ut från sida till sida.",
+]
+siril = [
+  "Image Processing › Background Extraction: GraXpert (AI) om det är installerat, eller RBF-metoden med punkter på tom himmel; Correction: Subtraction.",
+  "Kontrollera resultatet med Autostretch-visningen: himlen ska se jämn ut.",
+]
+"note#galaxy" = "Placera inga punkter nära galaxen: dess svaga halo når mycket längre än du ser. Håll punkterna minst en galaxdiameter bort."
+"note#emission" = "Med nebulosa över hela bilden, använd få punkter (10–15), bara i mörka luckor. Titta på bakgrundsmodellen: visar den nebulosaformer tar du bort nebulosa."
+"note#reflection" = "Det svaga stoftet förväxlas lätt med gradient. Använd få punkter, och bara där du är säker på att det inte finns stoft."
+"note#dark" = "Fält med mörka nebulosor har nästan ingen tom himmel. Använd AI-metoden, eller mycket få punkter, och kontrollera modellen noga."
+"note#milkyway" = "Med ett kameraobjektiv är vinjetteringen kraftig: korrigera den med flats först. Vintergatans band är verklig ljusstyrka; låt modellen bara följa det jämna himmelsskenet."
+
+[[stage]]
+id = "color"
+title = "Färgkalibrering"
+explain = "Kameran ser inte färgerna i rätt balans. Spektrofotometrisk färgkalibrering jämför stjärnorna i din bild med en katalog över deras verkliga färger, plattlöser bilden och ställer in färgbalansen så att stjärnorna, och med dem nebulosan eller galaxen, får sina sanna färger."
+pixinsight = [
+  "Plattlös bilden: Script › Astrometry › ImageSolver (behövs för SPCC).",
+  "SpectrophotometricColorCalibration: välj kamerans sensor (eller en generisk CMOS-kurva) och ditt filter; för en färgkamera utan filter, välj kamerans RGB-filteruppsättning. Background reference: en preview på tom himmel.",
+  "Sedan BackgroundNeutralization med en preview på tom himmel om himlen fortfarande inte är neutralt grå.",
+]
+siril = [
+  "Image Processing › Color Calibration › Spectrophotometric Color Calibration: den plattlöser och kalibrerar i ett steg. Välj sensor och filter.",
+  "Sedan Background Neutralization (i samma meny) på en markering av tom himmel om det behövs.",
+]
+"note#emission" = "Med ett dual- eller smalbandsfilter är färgkalibrering mot stjärnor inte meningsfull för nebulosan. Kalibrera stjärnorna och sätt sedan nebulosans färger efter palett (se färgsteget)."
+"note#cluster" = "Det här är det viktigaste steget för en stjärnhop: sanna stjärnfärger (blåvita, gula, orange) är det som får den att se verklig ut."
+
+[[stage]]
+id = "deconvolution"
+title = "Skärp med dekonvolution"
+explain = "Seeing och optik gör varje stjärna och varje detalj suddig på samma sätt. Dekonvolution mäter oskärpan från stjärnorna (punktspridningsfunktionen, PSF) och vänder en del av den. Rätt gjord drar den ihop stjärnorna och tar fram fin struktur; för hårt gjord lämnar den mörka ringar runt stjärnorna."
+pixinsight = [
+  "Mät oskärpan: Script › Image Analysis › PSFImage (eller DynamicPSF på 20–40 medelstora stjärnor och sedan Export synthetic PSF).",
+  "Gör en luminansmask så att himlen inte skärps (det skulle skärpa bruset).",
+  "Deconvolution: External PSF (bilden från steg 1), Richardson-Lucy, 20–40 iterationer, Deringing på (Global dark 0,02–0,05, med en stjärnmask som lokalt deringing-stöd). Prova på en preview först; sluta när stjärnorna får mörka ringar.",
+]
+"pixinsight@BlurXTerminator" = [
+  "BlurXTerminator på den linjära bilden. Först Correct Only (rättar utdragna och ojämna stjärnor över fältet), sedan en andra körning: Sharpen Stars 0,25–0,5, Adjust Star Halos -0,1 till -0,2, Sharpen Nonstellar 0,3–0,7.",
+]
+siril = [
+  "Image Processing › Deconvolution: PSF från bildens stjärnor (metoden Blind eller Stars), Richardson-Lucy, 10–30 iterationer. Förhandsgranska på ett litet område; sluta innan ringar syns.",
+]
+"note#galaxy" = "Det är dekonvolutionen som ger galaxdetaljerna: stoftband och armstruktur. Sharpen Nonstellar 0,5–0,7 med BlurXTerminator är vanligt."
+"note#globular" = "Dekonvolution löser upp stjärnor in i den täta kärnan. Se upp för ringar i det trånga centrumet."
+"note#planetary" = "Den lilla inre strukturen i en planetarisk nebulosa vinner mest här."
+"note#milkyway" = "Med ett kameraobjektiv är Correct Only den viktiga delen: objektiv drar ut stjärnorna mot hörnen."
+
+[[stage]]
+id = "noise"
+title = "Minska bruset"
+explain = "Sträckningen gör bruset synligt, så en mild brusreducering kommer före den. Den ska vara starkast i den mörka himlen och svagast på objektet, vilket är vad en inverterad luminansmask gör. Lämna lite fint korn kvar: en helt slät himmel ser målad ut."
+pixinsight = [
+  "Gör en inverterad luminansmask (Rate my pics flik Förbättra har receptet).",
+  "MultiscaleLinearTransform genom den: 4–5 lager, brusreducering på lager 1–4 (gränser 3 / 2 / 1 / 0,5, amount 0,5). För fläckar (mottle), även lager 5 och hoppa över lager 1.",
+  "Eller TGVDenoise genom masken, Strength ungefär 5.",
+]
+"pixinsight@NoiseXTerminator" = [
+  "NoiseXTerminator: Denoise 0,6–0,8, Detail 0,15. Ingen mask behövs. Finns fläckar kvar, MultiscaleLinearTransform på lager 3–5 genom en inverterad luminansmask.",
+]
+siril = [
+  "Image Processing › Denoise: NL-Bayes, modulation 0,7–1,0.",
+  "För att skona objektet, brusreducera en kopia och blanda in den i de mörka områdena med PixelMath: dn*(1-orig) + orig*orig.",
+]
+"note#galaxy" = "Var försiktig runt galaxen: den svaga halon och de yttre armarna ligger på brusnivån och försvinner med kraftig brusreducering."
+"note#cluster" = "Håll brusreduceringen borta från stjärnorna (luminansmask) så att svaga stjärnor inte jämnas bort."
+
+[[stage]]
+id = "stars_off"
+title = "Separera stjärnorna"
+explain = "Ett AI-verktyg tar bort stjärnorna och ger dig två bilder: det stjärnlösa objektet och stjärnorna för sig. Sedan sträcker och färgar du objektet fritt utan att stjärnorna sväller, och lägger tillbaka stjärnorna i slutet, med den storlek och ljusstyrka du väljer."
+pixinsight = [
+  "StarNet2 (gratis) på den linjära bilden med 'Linear data' ikryssat och 'Generate star mask' på; eller StarXTerminator med 'Generate star image'.",
+  "Du har nu en stjärnlös bild och en stjärnbild. Bearbeta dem var för sig; de kombineras igen i stjärnsteget.",
+]
+"pixinsight@StarXTerminator" = [
+  "StarXTerminator på den linjära bilden med 'Generate star image' ikryssat. Du får en stjärnlös bild och en stjärnbild.",
+]
+siril = [
+  "Image Processing › Star Processing › StarNet Star Removal, med 'Generate star mask' ikryssat (Siril kan köra den på linjär data med pre-stretch-alternativet).",
+]
+"note#galaxy" = "Valfritt för galaxer. Många behåller stjärnorna och dämpar dem bara lite i slutet; att separera hjälper när ljusa förgrundsstjärnor ligger nära galaxen."
+"note#dark" = "Nödvändigt för mörka nebulosor: stoftet syns bara när stjärnorna är mycket svagare än stoftet."
+
+[[stage]]
+id = "stretch"
+title = "Sträck: gör den svaga signalen synlig"
+explain = "Den linjära bilden ser nästan svart ut eftersom den svaga signalen ligger strax över himlen. Sträckningen lyfter de mörka tonerna och mellantonerna mycket mer än de ljusa. Gör den i flera milda steg och håll bakgrunden runt 8–12 % ljusstyrka: mörk, men inte svart."
+pixinsight = [
+  "GeneralizedHyperbolicStretch: sätt Symmetry point vid bakgrundens topp (klicka i histogrammet), Stretch factor 1–3, Highlight protection 0,9. Använd 2–4 gånger, lite varje gång.",
+  "Eller den enkla vägen: ScreenTransferFunction Auto Stretch, dra dess inställningar till HistogramTransformation och verkställ.",
+  "Kontrollera bakgrunden med avläsningen på tom himmel: ungefär 0,08–0,12.",
+]
+siril = [
+  "Image Processing › Generalized Hyperbolic Stretch: symmetripunkten vid bakgrundens topp, små sträckningar, highlight protection på. Upprepa tills objektet är tillräckligt ljust.",
+  "Eller Asinh Transformation följt av Histogram Transformation.",
+]
+"note#galaxy" = "Skydda kärnan: highlight protection i GHS, annars blir kärnan en vit skiva."
+"note#cluster" = "Sträck stjärnorna med ArcsinhStretch i stället: den behåller deras färg, där en vanlig sträckning gör ljusa stjärnor vita."
+"note#globular" = "Använd ArcsinhStretch och sluta innan kärnan klipps; HDRMultiscaleTransform tar tillbaka den senare."
+"note#reflection" = "Sträck milt; det svaga stoftet framträder gradvis. En för mörk bakgrund döljer det."
+"note#dark" = "Låt bakgrunden vara lite ljusare än vanligt (12–15 %): det mörka stoftet måste vara mörkare än himlen runt det."
+
+[[stage]]
+id = "local"
+title = "Lokal kontrast och ljusa kärnor"
+explain = "Efter sträckningen kan objektet se platt ut. Verktyg för lokal kontrast gör strukturen ljusare i förhållande till omgivningen, och HDR-verktyg tar tillbaka detaljer i ljusa kärnor som annars bränns ut. Använd dem genom en mask på objektet så att himlen inte påverkas."
+pixinsight = [
+  "Gör en range-mask på objektet (recept i fliken Förbättra).",
+  "LocalHistogramEqualization genom den: Kernel radius 64–128, Contrast limit 1,5–2, Amount 0,2–0,35. En andra körning med radie 16–32 tar fram finare struktur.",
+  "För ljusa kärnor: HDRMultiscaleTransform, 6–8 lager, Lightness mask på.",
+]
+siril = [
+  "Image Processing › CLAHE på den stjärnlösa bilden: tile size 8–16, clip limit 1,5–2. Blanda tillbaka med PixelMath om himlen får för mycket kontrast.",
+]
+"note#galaxy" = "HDRMultiscaleTransform på kärnan, LocalHistogramEqualization (radie 32–64) på armarna."
+"note#emission" = "LocalHistogramEqualization med två radier (128, sedan 32) ger gasen den klassiska 3D-känslan."
+"note#globular" = "HDRMultiscaleTransform med 4–6 lager löser upp kärnan; hoppa över LHE."
+
+[[stage]]
+id = "colour"
+title = "Färg och mättnad"
+explain = "En sträckning tar bort en del färg, så de flesta bilder behöver lite mättnad efteråt, bara på objektet. Små steg genom en luminans- eller range-mask ser naturliga ut; ett stort steg ser skrikigt ut och tar fram färgbrus i himlen."
+pixinsight = [
+  "SCNR (Green, Average Neutral, amount 0,6–1,0) om det finns en grön ton.",
+  "CurvesTransformation, mättnadskanalen (S), ett litet lyft, genom en luminansmask. Upprepa 2–3 gånger hellre än en gång kraftigt.",
+  "Smalbandspaletter: för HOO, PixelMath R = Ha, G = B = OIII (eller en blandning); för SHO, R = SII, G = Ha, B = OIII, sedan nyansjusteringar i CurvesTransformation.",
+]
+siril = [
+  "Remove Green Noise (SCNR) vid behov.",
+  "Color Saturation: amount 0,3–0,6, Background factor 1,5–2, i små steg.",
+  "Smalband: PixelMath eller verktyget för RGB-komposition för att fördela kanalerna (HOO eller SHO).",
+]
+"note#galaxy" = "Sikta på en gulvit kärna, blå armar och rosa HII-områden. Mätta försiktigt; galaxer blir lätt övermättade."
+"note#emission" = "Hα-rött och OIII-blågrönt är kraftiga av naturen; se till att det röda inte klipps."
+"note#reflection" = "Blått stoft med gula eller orange stjärnor; undvik att göra stoftet cyanfärgat."
+
+[[stage]]
+id = "stars_on"
+title = "Stjärnor: sträck, dämpa och lägg tillbaka"
+explain = "Stjärnbilden från separationssteget sträcks för sig, milt så att stjärnorna förblir små och behåller sin färg, och läggs sedan tillbaka. Styrkan du lägger tillbaka dem med avgör hur dominerande stjärnorna blir."
+pixinsight = [
+  "Sträck stjärnbilden med ArcsinhStretch (stretch factor 20–60, svartpunkt strax över bakgrunden): den behåller färgen i stjärnorna.",
+  "Kombinera med PixelMath (screen-blandning, ingen klippning): ~((~starless)*(~stars)). För svagare stjärnor, multiplicera dem först: ~((~starless)*(~(stars*0.8))).",
+]
+siril = [
+  "Sträck stjärnbilden med Asinh Transformation (den bevarar färgen).",
+  "Image Processing › Star Processing › Star Recomposition: ladda den stjärnlösa bilden och stjärnbilden, och ställ in hur starkt stjärnorna kommer tillbaka.",
+]
+"note#dark" = "Lägg tillbaka stjärnorna med 50–70 % styrka så att stoftet förblir synligt."
+"note#milkyway" = "Sänk stjärnornas styrka med 20–40 % så att Vintergatans struktur hamnar i förgrunden."
+"note#galaxy" = "Håll förgrundsstjärnorna små och med sanna färger; de ramar in galaxen."
+
+[[stage]]
+id = "cluster_stars"
+title = "Stjärnor: storlek och färg (motivet)"
+explain = "I en stjärnhop är stjärnorna bilden. Håll dem täta och färgade: dämpa de ljusaste lite så att de svagare medlemmarna syns, och lyft stjärnfärgen genom en stjärnmask."
+pixinsight = [
+  "MorphologicalTransformation (Morphological Selection 0,3, size 3, Amount 0,3–0,5) genom en stjärnmask på de ljusaste stjärnorna.",
+  "CurvesTransformation, mättnadskanalen, genom en stjärnmask: ett litet lyft för stjärnfärgen.",
+]
+siril = [
+  "Color Saturation på stjärnorna (låg Background factor så att även svaga stjärnor får färg).",
+]
+
+[[stage]]
+id = "finish"
+title = "Avsluta och exportera"
+explain = "Sista kontrollerna: en sista beskärning för kompositionen, en lätt kurvjustering, sedan spara mastern i full kvalitet och exportera kopior att dela. Exporten är det allra sista steget: bearbeta aldrig en JPEG vidare."
+pixinsight = [
+  "En sista CurvesTransformation för den totala kontrasten (en mild S-kurva), och kontrollera att bakgrunden ligger kvar på 8–12 %.",
+  "Spara mastern som XISF eller 16-bitars TIFF.",
+  "Exportera för att dela: File › Save As › JPEG, kvalitet 92–95, full upplösning (eller minst 3000 px på långsidan).",
+]
+siril = [
+  "En sista kurvjustering vid behov.",
+  "Spara mastern som 32-bitars FITS och som 16-bitars TIFF.",
+  "Save As JPEG, kvalitet 92–95, från den mastern.",
+]

@@ -7,6 +7,7 @@ import re
 
 from advastro.engine.session import SessionSummary
 from advastro.frame import FrameMeta
+from advastro.i18n import tr
 from advastro.naming import short_names
 from advastro.session_context import SessionContext
 from advastro.sky.identify import TargetReport
@@ -69,25 +70,25 @@ def build_facts(summary: SessionSummary, keep: dict[str, bool], meta: FrameMeta 
     f["dual_band"] = bool(DUAL_BAND.search(filter_name)) or bool(mk_filters.get("dual"))
     f["is_color"] = f["is_osc"]  # mono RGB sets: multi-filter sessions come in a later phase
     f["temp_text"] = (f"{meta.temperature_c:.0f} °C" if meta and meta.temperature_c is not None
-                      else "the same sensor temperature")
+                      else tr("adv.f.same_temp"))
     f["bortle"] = mk.bortle if mk else None
-    f["bortle_text"] = f", Bortle {f['bortle']} sky" if f["bortle"] else ""
+    f["bortle_text"] = tr("adv.f.bortle", n=f["bortle"]) if f["bortle"] else ""
 
     # --- calibration
     cal = context.calibration if context else None
     for kind in ("darks", "flats", "bias", "darkflats"):
         f[f"has_{kind}"] = bool(cal and cal.has(kind))
-    names = {"darks": "darks", "flats": "flats", "bias": "bias", "darkflats": "flat darks"}
+    names = {k: tr(f"cal.kind_short.{k}") for k in ("darks", "flats", "bias", "darkflats")}
     found = [names[k] for k in names if f[f"has_{k}"]]
-    f["cal_list"] = " and ".join([", ".join(found[:-1]), found[-1]] if len(found) > 1
-                                 else found) if found else None
+    f["cal_list"] = f" {tr('adv.f.and')} ".join([", ".join(found[:-1]), found[-1]]
+                                                if len(found) > 1 else found) if found else None
     details = []
     if cal:
         for k in names:
             if cal.counts.get(k):
                 details.append(f"{cal.counts[k]} {names[k]}")
             elif k in cal.masters:
-                details.append(f"a master {names[k].rstrip('s')}")
+                details.append(tr(f"adv.f.master.{k}"))
     f["cal_found"] = ", ".join(details) or None
     # Measured calibration frames (when analyzed) are the better source.
     if calibration is not None:
@@ -101,24 +102,23 @@ def build_facts(summary: SessionSummary, keep: dict[str, bool], meta: FrameMeta 
         noise = darks.medians.get("noise_adu") if darks else None
         glow = darks.medians.get("glow_adu") if darks else None
         f["dark_glow"] = bool(noise and glow and glow > 3 * noise)
-        f["darks_match"] = any(n.kind == "darks" and n.level == "good" and "match" in n.text
-                               for n in calibration.notes)
+        f["darks_match"] = any(n.id == "darks_match" for n in calibration.notes)
     else:
         f["cal_issue_count"], f["cal_issues"] = 0, ""
         f["dark_glow"], f["darks_match"] = False, False
-    f["flat_cal"] = ("the flat darks" if f["has_darkflats"] else
-                     "the bias frames" if f["has_bias"] else "nothing (none found)")
-    f["dark_optimize"] = ("off (the darks match the lights)" if f["darks_match"] else
-                          "off (amp glow)" if f["dark_glow"] else "on")
-    f["cosmetic_extra"] = (" Without darks, a slightly lower hot-pixel threshold catches more."
-                           if not f["has_darks"] else "")
+    f["flat_cal"] = tr("adv.f.flat_cal.darkflats" if f["has_darkflats"] else
+                       "adv.f.flat_cal.bias" if f["has_bias"] else "adv.f.flat_cal.none")
+    f["dark_optimize"] = tr("adv.f.dark_opt.match" if f["darks_match"] else
+                            "adv.f.dark_opt.glow" if f["dark_glow"] else "adv.f.dark_opt.on")
+    f["cosmetic_extra"] = tr("adv.f.cosmetic_extra") if not f["has_darks"] else ""
 
     # --- target and sky
     t = target
     f["solved"] = bool(t and t.confidence == "solved")
     f["located"] = bool(t and t.sky is not None)
     f["family"] = t.family if t else "unknown"
-    f["target_label"] = (t.target.label if t and t.target else "the target")
+    f["family_text"] = tr(f"adv.family.{f['family']}")
+    f["target_label"] = (t.target.label if t and t.target else tr("adv.f.the_target"))
     f["target_id"] = t.target.id if t and t.target else None
     f["target_mag"] = t.target.magnitude if t and t.target else None
     f["framing"] = t.framing if t else None
@@ -164,97 +164,64 @@ def _derived(f: dict, sky) -> None:
     undersampled = f["sampling"] == "undersampled"
     if f["dithered"] and undersampled and kept >= 15:
         f["drizzle_recommended"], f["drizzle_scale"] = True, 2
-        f["drizzle_reason"] = (f"Stars are only {f['fwhm_px']:.1f} px wide (undersampled) and "
-                               f"the subs are dithered ({f['dither_px']:.0f} px between subs), so "
-                               f"2x drizzle with {kept} subs recovers real resolution.")
+        f["drizzle_reason"] = tr("adv.f.drizzle_2x", fwhm=f"{f['fwhm_px']:.1f}",
+                                 dither=f"{f['dither_px']:.0f}", kept=kept)
     elif f["dithered"] and f["is_osc"] and kept >= 20:
         f["drizzle_recommended"], f["drizzle_scale"] = True, 1
-        f["drizzle_reason"] = ("Dithered colour data can be stacked with Bayer drizzle at 1x: "
-                               "each colour comes from real pixels instead of interpolation, "
-                               "which gives cleaner colour and finer stars.")
+        f["drizzle_reason"] = tr("adv.f.drizzle_1x")
     else:
         f["drizzle_recommended"], f["drizzle_scale"], f["drizzle_reason"] = False, None, None
     f["bayer_drizzle"] = bool(f["drizzle_recommended"] and f["is_osc"])
 
-    f["drift_note"] = (f" The field drifted {f['drift_px']:.0f} px over the session; "
-                       "registration handles that, but check polar alignment."
+    f["drift_note"] = (tr("adv.f.drift", px=f"{f['drift_px']:.0f}")
                        if f["drift_px"] and f["drift_px"] > 50 and not f["dithered"] else "")
 
     # Gradient removal
     grad = f["gradient_pct"]
     strong = (grad is not None and grad > 8) or (f["bortle"] or 0) >= 6
-    f["gradient_strength"] = " (strong)" if strong else ""
+    f["gradient_strength"] = tr("adv.f.strong") if strong else ""
     if f["framing"] in ("fills_field", "larger_than_field"):
-        how = (f"{f['target_label']} fills the frame, so there is little empty sky: place "
-               "background samples only on truly dark patches, or use an AI model such as "
-               "GraXpert, and avoid automatic polynomial fits that can remove faint nebulosity.")
+        how = tr("adv.f.grad_how.fills", target=f["target_label"])
     elif family == "galaxy":
-        how = ("There is plenty of empty sky around the galaxy, so an automatic fit "
-               "(low degree) or a few manual samples away from the galaxy's faint halo works well.")
+        how = tr("adv.f.grad_how.galaxy")
     else:
-        how = "Place samples on empty sky across the frame, avoiding stars and nebulosity."
-    level = (f"The background varies by about {grad:.0f} % across the frame"
-             if grad is not None else "Every sky has some gradient")
+        how = tr("adv.f.grad_how.other")
+    level = (tr("adv.f.grad_level", pct=f"{grad:.0f}") if grad is not None
+             else tr("adv.f.grad_level_unknown"))
     f["gradient_reason"] = f"{level}{f['bortle_text']}. {how}"
 
     # Plate solving and colour calibration
     if sky is not None and f["solved"]:
-        f["solve_reason"] = (f"Colour calibration needs it. Your session is already solved: "
-                             f"centre RA {_hms(sky.ra)}, Dec {_dms(sky.dec)}, "
-                             f"{sky.scale_arcsec:.2f}″/px. Enter these to solve in seconds.")
+        f["solve_reason"] = tr("adv.f.solve.solved", ra=_hms(sky.ra), dec=_dms(sky.dec),
+                               scale=f"{sky.scale_arcsec:.2f}")
     elif sky is not None:
-        f["solve_reason"] = (f"Colour calibration needs it. Start from the telescope pointing: "
-                             f"RA {_hms(sky.ra)}, Dec {_dms(sky.dec)}, about "
-                             f"{sky.scale_arcsec:.2f}″/px.")
+        f["solve_reason"] = tr("adv.f.solve.pointing", ra=_hms(sky.ra), dec=_dms(sky.dec),
+                               scale=f"{sky.scale_arcsec:.2f}")
     else:
-        f["solve_reason"] = ("Colour calibration needs an astrometric solution. Enter the image "
-                             "scale and the target name or coordinates to help the solver.")
+        f["solve_reason"] = tr("adv.f.solve.none")
     if f["dual_band"]:
-        f["color_reason"] = ("Use narrowband mode with your filter's Hα (656 nm) and OIII "
-                             "(500 nm) passbands, so the colours match what the filter "
-                             "really transmits.")
+        f["color_reason"] = tr("adv.f.color.dual")
     elif family == "galaxy":
-        f["color_reason"] = ("Measures star colours against a photometric catalog. Use an "
-                             "average spiral galaxy as white reference for natural galaxy colour.")
+        f["color_reason"] = tr("adv.f.color.galaxy")
     else:
-        f["color_reason"] = ("Measures the colours of stars in the field against a photometric "
-                             "catalog and corrects your camera's colour response.")
+        f["color_reason"] = tr("adv.f.color.other")
 
     # Deconvolution target
-    f["deconv_target"] = {
-        "galaxy": ": spiral arms and dust lanes benefit the most",
-        "planetary": ": the small shell structure benefits the most",
-        "emission": " in filaments and dark lanes; keep nebula sharpening moderate",
-    }.get(family, "")
+    f["deconv_target"] = tr(f"adv.f.deconv.{family}") if family in (
+        "galaxy", "planetary", "emission") else ""
 
     # Narrowband palette
     aesthetic = (f["aesthetic"] or "natural").upper()
     f["palette_text"] = "HOO" if aesthetic in ("HOO", "NATURAL") else aesthetic
-    f["sho_note"] = (" A true SHO palette needs SII data; an SHO look from Hα/OIII alone is an "
-                     "approximation." if aesthetic == "SHO" else "")
+    f["sho_note"] = tr("adv.f.sho_note") if aesthetic == "SHO" else ""
 
     # Stretch
-    f["stretch_reason"] = {
-        "galaxy": ("Use a generalized hyperbolic stretch with highlight protection so the core "
-                   "does not burn out while the faint outer arms come up."),
-        "cluster": "Use a gentle arcsinh stretch: it brightens faint stars without bleaching "
-                   "star colour.",
-        "globular": "Use a gentle arcsinh stretch and protect the dense core from saturating.",
-    }.get(family, ("Use a generalized hyperbolic stretch with the symmetry point at the "
-                   "background peak: faint nebulosity comes up without bloating the sky."))
-
-    f["contrast_reason"] = {
-        "galaxy": "Medium-scale contrast on the spiral arms brings out dust lanes and HII "
-                  "regions; keep it subtle so the halo stays smooth.",
-        "planetary": "Small-scale contrast brings out shell structure; protect the background.",
-    }.get(family, "Local histogram equalization at large scale brings out filaments and depth "
-                  "in the nebula; apply it to the starless image.")
-
-    f["saturation_reason"] = ("Raise saturation on the nebula through a mask, keeping the "
-                              "background neutral." if family != "galaxy" else
-                              "Raise saturation gently on the galaxy (blue arms, pink HII "
-                              "regions), keeping the background neutral.")
-    f["milky_way_note"] = (" — in this Milky Way field, reducing star strength by 20–40 % "
-                           "keeps the nebula in front" if f["milky_way"] else "")
+    f["stretch_reason"] = tr(f"adv.f.stretch.{family}" if family in (
+        "galaxy", "cluster", "globular") else "adv.f.stretch.other")
+    f["contrast_reason"] = tr(f"adv.f.contrast.{family}" if family in (
+        "galaxy", "planetary") else "adv.f.contrast.other")
+    f["saturation_reason"] = tr("adv.f.saturation.galaxy" if family == "galaxy" else
+                                "adv.f.saturation.other")
+    f["milky_way_note"] = tr("adv.f.milky_way_note") if f["milky_way"] else ""
     f["abs_b"] = f["abs_b"] if f["abs_b"] is not None else None
     f["panels"] = max(2, math.ceil(f["coverage"])) if f["coverage"] else None

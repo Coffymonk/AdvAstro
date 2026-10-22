@@ -1,0 +1,556 @@
+# Svensk text för tips.toml. Varje tabell ersätter motsvarande engelska fält; fält som inte
+# finns här tas från den engelska filen. {platshållare} är desamma som i originalet.
+
+[linear]
+why = "Datan är fortfarande linjär: den svaga signalen finns där men har inte tagits fram. Alla andra bedömningar görs på en automatisk sträckning."
+pixinsight = [
+  "Bakgrund och färg först, medan datan är linjär: GraXpert eller DynamicBackgroundExtraction, sedan SpectrophotometricColorCalibration.",
+  "Sträck med GeneralizedHyperbolicStretch (flera milda omgångar, symmetripunkten vid bakgrundens topp) eller HistogramTransformation via en ScreenTransferFunction-förhandsvisning.",
+  "Sikta på en bakgrund runt {target_sky} % ljusstyrka.",
+]
+siril = [
+  "Ta bort gradienten (Background Extraction eller GraXpert), sedan Photometric/Spectrophotometric Color Calibration.",
+  "Sträck med Generalized Hyperbolic Stretch, eller Asinh Transformation följt av Histogram Transformation.",
+  "Sikta på en bakgrund runt {target_sky} % ljusstyrka.",
+]
+
+[crushed_black]
+why = "Svartpunkten är för högt satt: den mörkaste himlen har klippts till helt svart, och det tar med sig svaga stjärnor, den svaga yttre nebulositeten och all naturlig struktur ({black_clip} % av pixlarna är klippta)."
+pixinsight = [
+  "Gå tillbaka till versionen före det sista kurv- eller nivåsteget.",
+  "HistogramTransformation: flytta skuggreglaget åt vänster tills avläsningen visar inga (eller bara några få) klippta pixlar.",
+  "CurvesTransformation: lyft kurvans lägsta punkt lite så att bakgrunden hamnar nära {target_sky} %.",
+]
+siril = [
+  "Ångra det sista nivå- eller kurvsteget.",
+  "Histogram Transformation: sänk skuggvärdet tills klippningsprocenten är nära noll.",
+  "Curves: lyft den nedre änden lite så att bakgrunden hamnar nära {target_sky} %.",
+]
+
+[dark_background]
+why = "Bakgrunden ligger på {sky_pct} %. Det ser dramatiskt ut på en ljus skärm, men svaga stjärnor och den yttre, svaga nebulositeten sjunker ner i svart, och på mörkare skärmar ser bilden tom ut."
+pixinsight = [
+  "CurvesTransformation: lyft skuggorna lite (en punkt vid indata 0,05 höjd till ungefär 0,08).",
+  "Eller en sista HistogramTransformation med en liten flyttning av mellantonerna åt vänster.",
+  "Mål: bakgrund runt {target_sky} %, mätt med avläsningen på en tom himmelsfläck.",
+]
+siril = [
+  "Curves: lyft kurvans nedre del lite.",
+  "Eller Histogram Transformation med en liten ändring av mellantonerna.",
+  "Mål: bakgrund runt {target_sky} %.",
+]
+
+[bright_background]
+why = "Bakgrunden ligger på {sky_pct} %. En grå himmel sänker kontrasten och får bilden att se disig eller urblekt ut."
+pixinsight = [
+  "HistogramTransformation: flytta skuggreglaget åt höger tills bakgrunden sjunker till ungefär {target_sky} %, och håll koll på antalet klippta pixlar.",
+  "Eller CurvesTransformation med en lätt S-kurva som gör skuggorna mörkare och behåller mellantonerna.",
+]
+siril = [
+  "Histogram Transformation: höj skuggvärdet tills bakgrunden sjunker till ungefär {target_sky} %.",
+  "Eller Curves med en mild S-kurva.",
+]
+
+[shadow_clip]
+why = "{black_clip} % av pixlarna har minst en färg klippt till noll. Klippta skuggor gör himlen fläckig och tar bort svag färg."
+pixinsight = [
+  "Sänk svartpunkten i den sista sträckningen lite tills klippningen är under 0,1 %.",
+  "Om en kanal klipps först, neutralisera bakgrunden före sträckningen (BackgroundNeutralization eller SPCC:s bakgrundssteg).",
+]
+siril = [
+  "Sänk skuggvärdet i den sista sträckningen tills klippningen är under 0,1 %.",
+  "Neutralisera bakgrunden före sträckningen (Color Calibration › Background).",
+]
+
+[gradient]
+why = "Bakgrundens ljusstyrka ändras med {gradient_pct} % över bilden{direction}. Oftast är det ljusföroreningar, månljus eller en ofullständig flat. Om ljusskillnaden är verklig nebulositet kan du bortse från detta."
+"why#emission" = "Bakgrundens ljusstyrka ändras med {gradient_pct} % över bilden{direction}. I en bild full av nebulosa kan en del av det vara svag nebulositet som du vill behålla: placera bakgrundspunkter bara där du är säker på att det inte finns nebulosa, eller använd färre punkter och en mildare modell."
+"why#milkyway" = "Ljusstyrkan ändras med {gradient_pct} % över fältet{direction}. Vintergatan själv är en stor ljusskillnad; det som ska bort är ljusföroreningar och luftsken ovanpå den."
+"pixinsight#emission" = [
+  "På den linjära mastern: GraXpert med lågt Smoothing-värde, eller DynamicBackgroundExtraction med 10–20 punkter placerade bara i mörka luckor mellan nebulositeten (kontrollera varje punktruta: ingen nebulosa inuti).",
+  "Correction: Subtraction. Titta på bakgrundsmodellen den skapar: den ska vara en jämn lutning utan nebulosaformer. Ser du nebulosa i modellen, ta bort de punkterna.",
+  "Kontrollera resultatet med en kraftig STF: de mörka luckorna ska vara jämna, nebulosan orörd.",
+]
+"siril#emission" = [
+  "På den linjära bilden: GraXperts (AI) bakgrundsextrahering, eller RBF-metoden med få punkter placerade bara i mörka luckor mellan nebulositeten.",
+  "Correction: Subtraction. Kontrollera att bakgrundsmodellen inte visar några nebulosaformer.",
+]
+pixinsight = [
+  "Arbeta på den linjära mastern: GraXpert (AI-bakgrundsextrahering) eller DynamicBackgroundExtraction med 15–25 punkter placerade bara på tom himmel.",
+  "Correction: Subtraction för ljusföroreningar; Division bara för vinjettering som flats inte tagit bort.",
+  "Kontrollera resultatet med en kraftig ScreenTransferFunction: himlen ska se jämn ut.",
+]
+siril = [
+  "På den linjära bilden: Image Processing › Background Extraction › GraXpert (AI), eller RBF-bakgrundsextraheringen med punkter på tom himmel.",
+  "Correction: Subtraction.",
+  "Kontrollera med en kraftig autostretch-visning: himlen ska se jämn ut.",
+]
+capture = [
+  "Ta flats för varje session utan att ändra fokus eller kamerarotation emellan.",
+  "Fotografera objektet när det står som högst och långt från månen och stadsljus.",
+]
+
+[color_gradient]
+why = "Bakgrunden byter färg över bilden (upp till {color_gradient_pct} % mellan kanalerna). Ljusföroreningar och månljus är sällan neutrala, så ena sidan får en annan ton."
+pixinsight = [
+  "Bakgrundsextrahering per kanal på den linjära mastern (GraXpert eller DBE med Subtraction).",
+  "Sedan BackgroundNeutralization eller SPCC med en bakgrundsreferens på tom himmel.",
+]
+siril = [
+  "Background Extraction på den linjära bilden (GraXpert eller RBF), sedan Color Calibration med en bakgrundsreferens.",
+]
+
+[color_cast]
+why = "Bakgrunden har en {cast_name} ton (kanalerna skiljer sig med {cast_pct} % av fullskala). En neutral mörkgrå himmel låter objektets verkliga färger träda fram."
+pixinsight = [
+  "Före sträckningen: BackgroundNeutralization med en preview på tom himmel, eller SPCC med dess bakgrundsreferens.",
+  "Efter sträckningen: CurvesTransformation per kanal, sänk skuggorna i kurvan för {cast_channel} lite tills himlen är neutral.",
+]
+siril = [
+  "Före sträckningen: Color Calibration › Background Neutralization på en markering av tom himmel.",
+  "Efter sträckningen: Curves per kanal, sänk skuggorna för {cast_channel} lite.",
+]
+
+[green_cast]
+why = "Himlen har en grön ton. Grönt är ovanligt i djuprymdsobjekt, så betraktare uppfattar det som ett fel; det kommer oftast från kamerans färgkänslighet eller ljusföroreningar."
+pixinsight = [
+  "SCNR: Color to remove Green, Protection method Average Neutral, Amount 0,6–1,0.",
+  "Använd på den linjära bilden efter färgkalibreringen, eller på den sträckta bilden med lägre Amount.",
+]
+siril = [
+  "Image Processing › Remove Green Noise (SCNR): Average Neutral, amount 0,6–1,0.",
+]
+
+[noise]
+why = "Korn syns i bakgrunden (brus ungefär {noise_pct} % av fullskala). Sträckningen förstärker bruset; lösningen är en mild brusreducering, starkast i himlen och svagast på objektet, och mer integrationstid."
+pixinsight = [
+  "Arbeta på den linjära bilden, efter bakgrundsextrahering och färgkalibrering.",
+  "Gör en inverterad luminansmask (recept nedan) så att brusreduceringen verkar på himlen och skonar objektet.",
+  "MultiscaleLinearTransform genom masken: Algorithm Multiscale linear, 4 lager, Noise reduction på för lager 1–4 med gränser 3 / 2 / 1 / 0,5 och amount 0,5 / 0,5 / 0,5 / 0,5. Förhandsgranska på ett litet område först (Real-Time Preview).",
+  "Eller TGVDenoise genom samma mask: Strength 5, Edge protection ungefär 2×10⁻³, 300 iterationer; sänk Strength om himlen blir slät och plastig.",
+  "Jaga inte en helt slät bakgrund: ett fint, jämnt korn ser naturligt ut och döljer fläckar.",
+]
+"pixinsight@NoiseXTerminator" = [
+  "NoiseXTerminator på den linjära bilden, efter bakgrundsextraheringen: Denoise 0,6–0,8, Detail 0,15. Den behåller detaljer bra på egen hand, så en mask är valfri.",
+  "Om himlen fortfarande ser kornig ut efter sträckningen: en andra, lätt omgång (Denoise 0,3) genom en inverterad luminansmask (recept nedan).",
+]
+siril = [
+  "Image Processing › Denoise: NL-Bayes, modulation 0,7–1,0, på den linjära eller lätt sträckta bilden.",
+  "För att hålla objektet skarpt, brusreducera en kopia och blanda tillbaka den med PixelMath så att den bara når de mörka områdena (recept nedan).",
+]
+"siril@NoiseXTerminator" = [
+  "NoiseXTerminator fungerar inte i Siril. Använd Denoise (NL-Bayes, modulation 0,7–1,0) eller GraXperts AI-brusreducering och blanda sedan in den i de mörka områdena med PixelMath (recept nedan).",
+]
+"why#galaxy" = "Korn syns i bakgrunden (brus ungefär {noise_pct} % av fullskala). Runt en galax ligger de svaga yttre armarna och halon precis på brusnivån, så brusreduceringen måste vara mild där: för mycket suddar ut utkanterna."
+capture = [
+  "Mer integrationstid är det enda verkliga botemedlet: dubbel tid sänker bruset med ungefär 30 %.",
+]
+
+[color_noise]
+why = "Kornet är färgat (röda, gröna och blå prickar i himlen). Färgbrus är den mest synliga sorten och den lättaste att ta bort utan att förlora detaljer."
+pixinsight = [
+  "MultiscaleLinearTransform bara på krominansen (Target: Chrominance), 4 lager, kraftiga gränser på lager 1–2.",
+  "Eller ColorSaturation/CurvesTransformation som sänker mättnaden i de mörkaste tonerna genom en mask.",
+]
+"pixinsight@NoiseXTerminator" = [
+  "NoiseXTerminator: höj färgseparationen (Enable color separation, färg-Denoise 0,9).",
+]
+siril = [
+  "Denoise med 'Independent channel denoising' avslaget, eller sänk mättnaden i skuggorna med Color Saturation-verktygets background factor.",
+]
+
+[mottle]
+why = "Bakgrunden visar fläckar några pixlar stora (mottle). Det är brus i större skala än det fina kornet. Brusreducering för fint korn (även NoiseXTerminator) lämnar det kvar, och kraftig utjämning gör det värre eftersom den tar bort kornet som dolde fläckarna. Mottle kommer också från kort total integrationstid, för lite dithring och bakgrundsextrahering med för många punkter."
+pixinsight = [
+  "Kontrollera först bakgrundsmodellen: öppna DBE- (eller GraXpert-) bakgrundsbilden med en kraftig STF. Visar den klumpar, använd färre punkter (15–25) på verkligt tom himmel och gör om extraheringen.",
+  "Gör en inverterad luminansmask på den linjära bilden (recept nedan), så att bara himlen behandlas.",
+  "MultiscaleLinearTransform genom masken, riktad mot de större skalorna: 6 lager, brusreducering AV på lager 1–2 (behåll det fina kornet), PÅ på lager 3–5 med gränser 3 / 2 / 1 och amount 0,7 / 0,6 / 0,5. Använd Real-Time Preview på en himmelsfläck och se fläckarna planas ut.",
+  "Alternativ: TGVDenoise genom masken, Strength 3–6, med 'Local support' satt till luminansmaskbilden så att den anpassar sig efter ljusstyrkan.",
+  "Avsluta med en mycket lätt omgång för fint korn (eller ingen). Målet är jämnt fint korn, inte en slät himmel.",
+]
+"pixinsight@NoiseXTerminator" = [
+  "Kör NoiseXTerminator som vanligt för det fina kornet (Denoise 0,6–0,8), men inte starkare: den tar inte bort mottle.",
+  "Sedan de större skalorna: inverterad luminansmask (recept nedan) och MultiscaleLinearTransform med brusreducering bara på lager 3–5 (gränser 3 / 2 / 1, amount 0,7 / 0,6 / 0,5).",
+  "Kontrollera DBE:s eller GraXperts bakgrundsmodell efter klumpar; färre punkter på tom himmel undviker att skapa mottle.",
+]
+siril = [
+  "Kontrollera bakgrundsextraheringen först: färre punkter, bara på tom himmel; eller använd GraXperts AI-bakgrund, som inte ger klumpar.",
+  "Image Processing › Wavelets: sätt vikter under 1 för mellanlagren (lager 3–5 till ungefär 0,6–0,8) och 1 för lager 1–2. Det mjukar upp fläckskalan men behåller det fina kornet.",
+  "Använd det på en kopia och blanda in den bara i de mörka områdena med PixelMath (recept nedan).",
+]
+capture = [
+  "Dithra var 1–3:e delbild och samla fler: mottle minskar med kvadratroten ur den totala exponeringstiden (fyra gånger så många timmar halverar den).",
+]
+
+[plastic]
+why = "Bakgrunden är nästan helt slät (brus {noise_pct} % av fullskala). Det uppfattas ofta som 'plastigt' eller målat, och mycket svaga detaljer försvinner med bruset."
+pixinsight = [
+  "Minska brusreduceringens styrka eller blanda tillbaka en del av originalet: PixelMath  0.8*denoised + 0.2*original.",
+]
+"pixinsight@NoiseXTerminator" = [
+  "Sänk NoiseXTerminators Denoise till 0,5–0,7 och höj Detail; eller blanda tillbaka originalet med PixelMath.",
+]
+siril = [
+  "Gör om Denoise med lägre modulation (0,5–0,7), eller blanda med originalet i PixelMath.",
+]
+
+[walking_noise]
+why = "Bakgrundsbruset har en riktning (strimmor i ungefär {walking_angle}°). Mönstret kallas vandrande brus (walking noise): monteringen drev sakta åt ett håll och samma pixelfel smetades ut till linjer."
+pixinsight = [
+  "Stapla om med CosmeticCorrection och storskalig pixelavvisning på; WBPP:s 'Large-scale pixel rejection' hjälper.",
+  "Drizzle-integrering kan minska det ytterligare om du dithrade.",
+]
+siril = [
+  "Stapla om med kosmetisk korrigering från masterdarken och Winsorized sigma-avvisning.",
+]
+capture = [
+  "Dithra var 1–3:e delbild (i NINA, ASIAIR eller PHD2) och använd guidning för att stoppa den långsamma driften.",
+]
+
+[hot_pixels]
+why = "{hot_pixels} enstaka ljusa pixlar finns kvar i bilden. Det är sensorfel som kalibrering och stapling borde ta bort. Klicka Visa för att kontrollera dem först: om de markerade prickarna är enstaka, skarpa, ofta färgade pixlar är det heta pixlar; om de är små runda prickar på några pixlar är det svaga stjärnor och du kan bortse från detta."
+pixinsight = [
+  "Åtgärdas bäst vid staplingen: slå på CosmeticCorrection i WBPP (Auto detect, Hot sigma 3, Cold sigma 3) och använd en pixelavvisningsmetod (Generalized Extreme Studentized Deviate eller Winsorized sigma clipping). Stapla om.",
+  "På den färdiga bilden: CosmeticCorrection med 'Use Auto detect' och Hot sigma 3–5, använd direkt. Kontrollera med avläsningen att stjärnorna är orörda.",
+  "Eller för hand: duplicera bilden och döp om kopian till med; använd MorphologicalTransformation (Operator Median, size 3) på med; sedan PixelMath på din bild: iif($T - med > 0.1, med, $T). Det ersätter bara pixlar som är mycket ljusare än omgivningen.",
+]
+siril = [
+  "Åtgärdas bäst vid förbearbetningen: slå på Cosmetic Correction från masterdarken (hot sigma 3) i förbearbetningsfliken, och Winsorized sigma-avvisning vid staplingen.",
+  "På den färdiga bilden: Image Processing › Cosmetic Correction (sigma 3–5 för heta pixlar).",
+]
+capture = [
+  "Dithra mellan delbilderna så att heta pixlar hamnar på olika ställen på himlen och avvisas vid staplingen.",
+  "Ta darks vid samma temperatur som ljusbilderna; en varmare sensor har många fler heta pixlar.",
+]
+
+[stars_soft]
+why = "Stjärnorna är i det större laget (median {fwhm} pixlar breda vid halva ljusstyrkan). Stora stjärnor drar blicken från objektet och döljer svaga detaljer runt dem."
+pixinsight = [
+  "Dekonvolution på den linjära bilden med en PSF gjord med skriptet PSFImage, 20–40 iterationer, med deringing, genom en stjärnmask.",
+  "Efter sträckningen: separera stjärnorna (StarNet2), sträck stjärnbilden mindre och sätt ihop med PixelMath: ~((~starless)*(~stars)).",
+  "Eller MorphologicalTransformation (Morphological Selection, Selection 0,3, size 3–5, Amount 0,3–0,5) genom en stjärnmask (recept nedan).",
+]
+"pixinsight@BlurXTerminator" = [
+  "BlurXTerminator på den linjära bilden: Sharpen Stars 0,25–0,5, Adjust Star Halos -0,1 till -0,2.",
+  "Efter sträckningen: separera stjärnorna och sträck dem mindre innan du sätter ihop.",
+]
+siril = [
+  "Dekonvolution (Richardson-Lucy, PSF från stjärnor) på den linjära bilden.",
+  "Efter sträckningen: StarNet Star Removal, sträck stjärnorna mindre och sätt ihop med Star Recomposition (recept nedan).",
+]
+capture = [
+  "Kontrollera fokus under natten; temperaturändringar flyttar det. En Bahtinovmask eller autofokus var 1–2:a timme, eller efter en ändring på 1–2 °C, hjälper.",
+]
+
+[big_stars]
+why = "De ljusaste stjärnorna är stora klumpar (ungefär {fwhm_bright} pixlar breda), så de dominerar bilden."
+pixinsight = [
+  "Separera stjärnorna med StarNet2 (eller StarXTerminator), sträck stjärnbilden mindre och sätt ihop med PixelMath: ~((~starless)*(~stars)).",
+  "Eller MorphologicalTransformation (Morphological Selection 0,3, size 5) genom en stjärnmask (recept nedan) som bara innehåller de ljusaste stjärnorna: höj StarMasks noise threshold tills svaga stjärnor faller bort.",
+]
+"pixinsight@StarXTerminator" = [
+  "StarXTerminator med 'Generate star image'; sträck stjärnorna mindre och sätt ihop med PixelMath: ~((~starless)*(~(stars*0.7))).",
+]
+siril = [
+  "StarNet Star Removal; sedan Star Recomposition med svagare stjärnsträckning.",
+]
+"why#cluster" = "De ljusaste stjärnorna är stora klumpar (ungefär {fwhm_bright} pixlar breda). I en stjärnhop är stjärnorna motivet, så deras storlek och färg är viktigast: täta, ljusa stjärnor med synlig färg ser bäst ut."
+
+[star_dominance]
+why = "Stjärnorna täcker ungefär {star_area} % av bilden. I rika Vintergatsfält är det naturligt, men att dämpa dem låter nebulosan ta plats i centrum."
+pixinsight = [
+  "Stjärnreducering: StarNet2 eller StarXTerminator, och sätt sedan tillbaka stjärnorna med 60–80 % styrka.",
+  "Eller MorphologicalTransformation genom en stjärnmask.",
+]
+siril = [
+  "StarNet Star Removal, sedan Star Recomposition med dämpade stjärnor.",
+]
+
+[trailed_stars]
+why = "Stjärnorna är utdragna i samma riktning över hela bilden (utdragning {ellipticity}). Det pekar på följningen: guidningsfel, vind, balans eller polinställning."
+pixinsight = [
+  "Stapla om med bara de delbilder som har runda stjärnor: SubframeSelector (Eccentricity under 0,5) eller AdvAstros urval av delbilder.",
+  "Lätt utdragning kan minskas efteråt med BlurXTerminator (den rättar icke-runda stjärnor) eller MorphologicalTransformation.",
+]
+"pixinsight@BlurXTerminator" = [
+  "BlurXTerminator rättar lätt utdragning: Correct Only först, sedan Sharpen Stars 0,25.",
+  "Stapla om utan de sämsta delbilderna: SubframeSelector eller AdvAstros urval av delbilder.",
+]
+siril = [
+  "Stapla om utan de sämsta delbilderna: i sekvensens bildlista, sortera efter rundhet och avmarkera de sämsta.",
+]
+capture = [
+  "Kontrollera guidningen (RMS under halva din bildskala), balansera lite östtungt och gör om polinställningen.",
+  "Kortare delbilder minskar effekten av vind och periodiskt fel.",
+]
+
+[corner_stars]
+why = "Stjärnorna i hörnen är {corner_pct} % större än i mitten{shape}. Optiken ger inte ett plant, skarpt fält ända ut till kanterna: oftast flattenerns eller reducerns avstånd, eller ingen flattener alls."
+pixinsight = [
+  "Titta på en enda delbild med Script › Image Analysis › AberrationInspector för att se mönstret: utdragna mot mitten = för långt eller kort avstånd; utdragna längs cirklar = fältkrökning.",
+  "Reparera den här bilden: DynamicCrop för att skära bort de sämsta hörnen, eller krymp stjärnorna där med MorphologicalTransformation genom en stjärnmask (recept nedan).",
+]
+"pixinsight@BlurXTerminator" = [
+  "BlurXTerminator rättar koma och astigmatism per område: kör den på den linjära bilden med Correct Only först.",
+  "Beskär det som är kvar med DynamicCrop.",
+]
+siril = [
+  "Beskär bort de sämsta hörnen, eller dämpa stjärnorna efter StarNet-separationen (Star Recomposition).",
+]
+capture = [
+  "{capture_hint}",
+]
+
+[corner_elongation]
+why = "Stjärnorna är utdragna bara i {corner} hörnet (utdragning {ecc}, mot ett runt centrum). Ett enda dåligt hörn betyder oftast lutning, en flattener eller reducer på fel avstånd med den optiska axeln ur centrum, kollimering, eller ett klämt eller förskjutet optiskt element. Roterade delbilder i stapeln kan också ge ett utdraget hörn där du inte väntar dig det."
+pixinsight = [
+  "Titta på utdragningens riktning med Script › Image Analysis › AberrationInspector på en enda delbild: stjärnor som pekar mot mitten betyder avstånd (back focus); stjärnor utdragna längs cirklar betyder fältkrökning eller astigmatism; bara ett hörn betyder lutning eller en komponent ur axeln.",
+  "Reparera den här bilden: beskär bort hörnet med DynamicCrop om kompositionen tillåter.",
+  "Eller reparera lokalt: gör en hörnmask och en stjärnmask (recept nedan), multiplicera dem i PixelMath (corner*stars) så att bara stjärnorna i det hörnet är vita, och använd MorphologicalTransformation (Morphological Selection 0,3–0,5, size 3) genom den.",
+]
+"pixinsight@BlurXTerminator" = [
+  "BlurXTerminator på den linjära bilden (Correct Only först): den rättar utdragning per område, även i ett enda hörn.",
+  "Beskär det som är kvar med DynamicCrop.",
+  "Kontrollera en enda delbild med AberrationInspector för att hitta orsaken till nästa session.",
+]
+siril = [
+  "Beskär bort hörnet (Image › Crop), eller dämpa stjärnorna där efter StarNet-separation och Star Recomposition.",
+  "Kontrollera en enda delbild med Analysis › Image Analysis (Aberration Inspector) för att se orsaken.",
+]
+capture = [
+  "Förebygg det: ställ in flattenerns eller reducerns avstånd exakt (ofta 55 mm från gängan till sensorn), se till att kameran och korrektorn sitter rakt utan glapp, och använd kamerans tiltplatta om den har en.",
+  "Testa efter varje ändring med en delbild och aberrationsinspektören, innan en hel natts fotografering.",
+]
+
+[tilt]
+why = "Ett hörn är tydligt skarpare än det motsatta (de skiljer sig med {tilt_pct} %). Sensorlutning är skolboksorsaken, men lika vanliga är: back focus lite fel med den optiska axeln ur centrum på sensorn; kollimering (reflektorer, RASA, SCT); en klämd eller förskjuten lins eller korrektor; böjning i fokuseraren eller kamerakedjan; och staplingen — delbilder roterade mellan nätter eller efter en meridianvändning blandar olika hörn, och en beskärning ur centrum får det att se ensidigt ut."
+pixinsight = [
+  "Ta först reda på om det sitter i optiken eller i stapeln: öppna en enda kalibrerad delbild och kör Script › Image Analysis › FWHMEccentricity. Är den enskilda delbilden jämn är orsaken staplingen eller beskärningen, inte kameran.",
+  "Om den enskilda delbilden också visar det: Script › Image Analysis › AberrationInspector gör en 3×3-mosaik av hörnen och mitten, så att du ser åt vilket håll stjärnorna dras ut.",
+  "För den här bilden: BlurXTerminator (Correct Only) jämnar ut oskärpa per område; annars beskär den mjukaste kanten med DynamicCrop, eller krymp stjärnorna där genom en hörnmask (recept nedan) kombinerad med en stjärnmask.",
+]
+"pixinsight@BlurXTerminator" = [
+  "Kontrollera en enda kalibrerad delbild med Script › Image Analysis › FWHMEccentricity eller AberrationInspector: sitter oskärpan i optiken, eller bara i stapeln?",
+  "För den här bilden: BlurXTerminator på den linjära bilden, Correct Only först; den rättar oskärpa och utdragning per område. Beskär det som är kvar med DynamicCrop.",
+]
+siril = [
+  "Kontrollera en enda delbild: Analysis › Image Analysis (Aberration Inspector) eller Dynamic PSF i varje hörn. Jämn i en enskild delbild betyder att stapeln eller beskärningen orsakar det.",
+  "För den här bilden: beskär den mjukaste kanten (Image › Crop).",
+]
+capture = [
+  "Skilj orsakerna åt: vrid kameran 90° och ta en delbild. Ett mjukt hörn som följer med kameran sitter på kamerasidan (lutning, adapter, avstånd); ett som stannar kvar sitter i teleskopet (kollimering, klämd optik).",
+  "Back focus: placera sensorn på exakt det avstånd din flattener eller reducer kräver (ofta 55 mm); en millimeter fel syns som mjuka eller utdragna hörn.",
+  "Kontrollera glapp i fokuseraren och kamerans anslutning, och dra åt linsfattningar bara med fingrarna.",
+]
+
+[star_rings]
+why = "{ring_pct} % av de ljusa stjärnorna har en mörk ring runt sig. Ringar kommer från överskärpning eller för många dekonvolutionsiterationer, och är bland det första erfarna betraktare lägger märke till."
+pixinsight = [
+  "Gör om dekonvolutionen med färre iterationer och Deringing på (global dark 0,02–0,05, med en stjärnmask).",
+  "Sänk styrkan i skärpningen med UnsharpMask / MultiscaleLinearTransform och använd den genom en mask som utesluter stjärnorna.",
+]
+"pixinsight@BlurXTerminator" = [
+  "Sänk BlurXTerminators Sharpen Stars (0,2–0,3) och undvik extra skärpning ovanpå.",
+  "Skärp bara detaljer som inte är stjärnor, genom en stjärnmask.",
+]
+siril = [
+  "Gör om dekonvolutionen med färre iterationer, eller använd Unsharp Mask mildare och bara på den stjärnlösa bilden.",
+]
+
+[star_color]
+why = "Stjärnorna ser nästan färglösa ut (färgspridning {color_spread}). Verkliga stjärnor går från blåvita till orange; den variationen får en bild att kännas naturlig och djup."
+pixinsight = [
+  "Färgkalibrera med SPCC på den linjära datan.",
+  "Sträck stjärnorna för sig med ArcsinhStretch, som behåller färgen i stjärnorna.",
+  "Öka mättnaden bara på stjärnorna, genom en stjärnmask (CurvesTransformation, mättnadskurvan).",
+]
+siril = [
+  "Spectrophotometric Color Calibration, sedan Asinh Transformation för stjärnorna (den bevarar färgen).",
+  "Color Saturation på stjärnbilden efter StarNet-separationen.",
+]
+
+[white_cores]
+why = "De flesta ljusa stjärnorna har helt vita, klippta kärnor. Färgen försvinner i mitten, vilket får stjärnorna att se ut som hål i bilden."
+pixinsight = [
+  "Sträck stjärnorna med ArcsinhStretch i stället för en vanlig histogramsträckning.",
+  "Eller separera stjärnorna och använd en mildare sträckning för stjärnbilden.",
+]
+siril = [
+  "Använd Asinh Transformation på stjärnorna (med alternativet 'Use RGB working space') i stället för en kraftig histogramsträckning.",
+]
+
+[magenta_stars]
+why = "Många stjärnor är magentafärgade. Det är typiskt för smalbands- eller dual-band-data, där stjärnorna är svaga i den gröna kanalen."
+pixinsight = [
+  "Invertera bilden, använd SCNR (green, amount 0,5–0,8) och invertera tillbaka: det tar bort magenta.",
+  "Eller ersätt stjärnorna med RGB-stjärnor tagna med ett bredbandsfilter.",
+]
+siril = [
+  "Negative transformation, sedan Remove Green Noise (SCNR), sedan negativ igen.",
+]
+
+[fringe]
+why = "Stjärnorna har en {fringe_color} kant: en färg är större än de andra. Det är kromatisk aberration i optiken, eller kanaler som passats ihop lite olika."
+pixinsight = [
+  "Passa ihop kanalerna med varandra (ChannelExtraction, StarAlignment av R och B mot G, ChannelCombination).",
+  "Dämpa kantfärgen på stjärnorna genom en stjärnmask (CurvesTransformation på den nyansen, eller SCNR för gröna kanter).",
+]
+siril = [
+  "Dela upp kanalerna, registrera dem mot den gröna kanalen och sätt ihop dem igen.",
+]
+capture = [
+  "Med en dublett eller ett kameraobjektiv minskar ett smalbands- eller UV/IR-spärrfilter kanten.",
+]
+
+[muted]
+why = "Färgerna är dämpade (medianmättnad {saturation_pct} %). Objektet ser gråare ut än det är. Höj mättnaden bara på objektet: i himlen skulle den ta fram färgbrus."
+pixinsight = [
+  "Se till att färgkalibreringen gjordes på den linjära datan (SpectrophotometricColorCalibration); mättnad kan inte rätta en fel färgbalans.",
+  "Gör en luminansmask (recept nedan) så att bakgrunden skyddas.",
+  "CurvesTransformation genom masken, S-kanalen (mättnad): dra upp linjens mitt lite (ungefär 0,5 → 0,6). Använd 2–3 gånger hellre än en gång kraftigt.",
+  "Eller ColorSaturation genom masken, och höj kurvan bara vid ditt objekts nyanser.",
+]
+siril = [
+  "Image Processing › Color Saturation: amount 0,3–0,6, med Background factor ungefär 1,5 så att himlen skyddas.",
+  "Upprepa i små steg hellre än ett stort.",
+]
+"why#galaxy" = "Färgerna är dämpade (medianmättnad {saturation_pct} %). Galaxer är diskreta: en gulaktig kärna, blåaktiga armar och små rosa stjärnbildningsområden. Den variationen får en galax att se verklig ut; den kräver bra färgkalibrering och lite mättnad bara på galaxen."
+"pixinsight#galaxy" = [
+  "SpectrophotometricColorCalibration på den linjära datan, sedan BackgroundNeutralization om himlen inte är neutral.",
+  "Gör en range-mask på galaxen (recept nedan) så att bara galaxen får mättnaden.",
+  "CurvesTransformation, mättnadskanalen, små lyft genom masken. Se de rosa HII-områdena och de blå armarna framträda, och sluta innan kärnan blir orange.",
+]
+"siril#galaxy" = [
+  "Spectrophotometric Color Calibration på den linjära datan.",
+  "Color Saturation, amount 0,3–0,5 med Background factor 2, i små steg.",
+]
+
+[oversaturated]
+why = "Färgerna är mycket hårt drivna ({sat_high} % av objektet är nära full mättnad). Det ser skrikigt ut och döljer objektets diskreta variationer."
+pixinsight = [
+  "Backa mättnadssteget; använd mättnad i två eller tre små steg i stället för ett stort.",
+  "Använd en luminansmask för att hålla mättnaden borta från de ljusaste delarna.",
+]
+siril = [
+  "Gör om Color Saturation med lägre amount, eller i mindre steg.",
+]
+
+[channel_clip]
+why = "{channel_clip} % av de ljusa områdena har en färgkanal klippt. Färgdetaljerna försvinner där och nyansen förskjuts."
+pixinsight = [
+  "Minska mättnaden eller den sista sträckningen så att ingen kanal når toppen eller botten.",
+  "Kontrollera med processen Statistics eller avläsningen i de ljusaste delarna.",
+]
+siril = [
+  "Minska mättnaden eller den sista sträckningen tills histogrammet inte längre staplas upp i någon ände.",
+]
+
+[low_detail]
+why = "Fin struktur höjer sig knappt över bruset (detaljkvot {detail_ratio}). Objektet ser mjukt eller platt ut. Skärp bara objektet, genom en mask, så att himlens brus inte växer."
+pixinsight = [
+  "Dekonvolution på den linjära bilden först: PSFImage (skript) för att mäta dina stjärnor, sedan Deconvolution med den PSF:en, 20–40 iterationer, Deringing på, genom en luminansmask (recept nedan).",
+  "Efter sträckningen: LocalHistogramEqualization (Kernel radius 64–128, Contrast limit 1,5–2, Amount 0,2–0,35) genom en range-mask på objektet (recept nedan).",
+  "Eller MultiscaleLinearTransform med Bias 0,05–0,1 på lager 2–4 genom samma mask.",
+]
+"pixinsight@BlurXTerminator" = [
+  "BlurXTerminator på den linjära bilden: Sharpen Nonstellar 0,3–0,6 (den skyddar himlen av sig själv).",
+  "Efter sträckningen: LocalHistogramEqualization (radie 64–128, amount 0,25) genom en range-mask på objektet (recept nedan).",
+]
+siril = [
+  "Dekonvolution (Richardson-Lucy, PSF från stjärnor) på den linjära bilden.",
+  "Efter sträckningen: CLAHE (tile size 8–16, clip limit 1,5–2) på det stjärnlösa objektet; blanda tillbaka med PixelMath om himlen blir brusig (recept nedan).",
+]
+
+[low_contrast]
+why = "Objektet höjer sig knappt över bakgrunden (bara {contrast_pct} % av fullskala). Bilden ser mörk och platt ut; det finns utrymme att sträcka mer."
+pixinsight = [
+  "En till mild sträckning (GeneralizedHyperbolicStretch med highlight protection) eller ett lyft av mellantonerna med CurvesTransformation.",
+  "Sedan kontrast i objektet: LocalHistogramEqualization genom en mask, eller HDRMultiscaleTransform för ljusa kärnor.",
+]
+siril = [
+  "Generalized Hyperbolic Stretch: ytterligare en liten sträckning med highlight protection.",
+  "Sedan CLAHE på objektet för lokal kontrast.",
+]
+
+[clipped_highlights]
+why = "Ljusa delar av objektet är utbrända ({extended_clip_px} pixlar helt vita utanför stjärnkärnorna). Strukturen i det ljusaste området är förlorad."
+pixinsight = [
+  "Gå tillbaka till den linjära bilden och sträck med highlight protection (GeneralizedHyperbolicStretch: Highlight protection 0,9).",
+  "HDRMultiscaleTransform (6–8 lager, lightness mask) tar tillbaka strukturen i ljusa kärnor.",
+]
+siril = [
+  "Gör om sträckningen med Generalized Hyperbolic Stretchs highlight protection, sedan en mild lokal kontrast i HDR-stil (CLAHE).",
+]
+capture = [
+  "För objekt med mycket ljusa kärnor (M42, M31), lägg till en serie korta delbilder och blanda in dem.",
+]
+
+[banding]
+why = "Histogrammet har luckor ({comb_pct} % av nivåerna är tomma): bilden sträcktes efter att ha sparats med 8 bitar per kanal, så jämna övergångar blir synliga trappsteg."
+pixinsight = [
+  "Bearbeta i 32-bitars flyttal från början till slut; exportera till 8-bitars JPEG bara som allra sista steg.",
+  "Om bara 8-bitarsversionen finns kvar döljer lite tillagt brus (NoiseGenerator, 0,5 %) trappstegen.",
+]
+siril = [
+  "Behåll arbetsfilen som 32-bitars FITS; exportera till JPEG eller 8-bitars PNG först i slutet.",
+]
+
+[banding_risk]
+why = "Himlen är så slät att 8-bitarssteg bildar platta fält ({plateau_pct} % av himlen). Jämna övergångar kan visa konturlinjer på vissa skärmar."
+pixinsight = [
+  "Exportera som 16-bitars TIFF eller PNG för utskrift och delning där det går.",
+  "För JPEG, behåll lite fint korn (lättare brusreducering) för att dölja stegen.",
+]
+siril = [
+  "Exportera 16-bitars TIFF/PNG där det går, och behåll lite fint korn för JPEG.",
+]
+
+[jpeg]
+why = "JPEG-filen är hårt komprimerad (kvalitet ungefär {jpeg_quality}, blockartefakter {blockiness}x). Komprimeringen smetar ut svaga detaljer och lägger till 8x8-block i himlen."
+pixinsight = [
+  "Exportera med kvalitet 92–95 (File › Save As › JPEG).",
+  "Behåll mastern som XISF eller 16-bitars TIFF och exportera JPEG-filer från den, aldrig från en annan JPEG.",
+]
+siril = [
+  "Save As JPEG med kvalitet 92–95, från 32-bitarsmastern.",
+]
+
+[edges]
+why = "Längs {edges} syns fortfarande staplingskanter (mörka eller brusiga remsor där inte alla delbilder överlappade)."
+pixinsight = [
+  "DynamicCrop tills ingen ojämn kant finns kvar, eller slå på WBPP:s Autocrop.",
+]
+siril = [
+  "Markera det rena området och Crop, eller använd beskärningsalternativet efter registreringen.",
+]
+
+[small_image]
+why = "Bilden är bara {megapixels} megapixel. Domare och AstroBin-besökare zoomar in; en liten bild döljer dina detaljer."
+pixinsight = [
+  "Dela i full upplösning, eller minst 3000 pixlar på långsidan.",
+]
+siril = [
+  "Dela i full upplösning, eller minst 3000 pixlar på långsidan.",
+]
+
+[depth]
+why = "Din bild når stjärnor av magnitud {limit_mag} (Gaia G). {depth_text}"
+pixinsight = [
+  "Djupet kommer från integrationstid och mörk himmel. Stapla fler delbilder, och ta bort de sämsta delbilderna snarare än alla gränsfall.",
+]
+siril = [
+  "Djupet kommer från integrationstid och mörk himmel. Stapla fler delbilder, och ta bort de sämsta delbilderna snarare än alla gränsfall.",
+]
+capture = [
+  "Lägg till integrationstid: för att nå en magnitud djupare behövs ungefär 6 gånger så lång tid.",
+]
+
+[color_calibration]
+why = "Stjärnornas färger följer inte deras sanna färger (korrelation med Gaias färger {color_r}). {color_text}"
+pixinsight = [
+  "SpectrophotometricColorCalibration på den linjära datan, med din kameras sensorkurva och filter.",
+  "Undvik sedan kurvor per kanal som förskjuter balansen efteråt.",
+]
+siril = [
+  "Spectrophotometric Color Calibration på den linjära datan, med din sensor och dina filter valda.",
+]

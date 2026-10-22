@@ -1,0 +1,81 @@
+# Svensk text för masks.toml. Menyer och processnamn står som i programmens engelska gränssnitt.
+
+[luminance]
+title = "Luminansmask (effekt på de ljusa delarna)"
+what = "Vit där bilden är ljus, svart där den är mörk. En process som används genom den påverkar objektet och lämnar himlen i fred: använd den för skärpning, mättnad och kontrast."
+pixinsight = [
+  "Duplicera bilden: dra dess flik till en tom del av arbetsytan. Arbeta på kopian, aldrig originalet.",
+  "Om bilden fortfarande är linjär: öppna ScreenTransferFunction, klicka Auto Stretch, dra STF-triangeln till nedre listen i HistogramTransformation och dra HistogramTransformations triangel till kopian. Kopian är nu sträckt på riktigt.",
+  "Image › Extract › Lightness (CIE L*). Det ger en gråskalebild; den är masken. Stäng färgkopian.",
+  "Gör masken suddig så att effekten tonas in mjukt: Convolution, Gaussian, StdDev 3–5 pixlar, på masken.",
+  "Forma den med HistogramTransformation på masken: flytta skuggreglaget åt höger tills himlen är nästan svart, och mellantonsreglaget tills objektet är ljusgrått till vitt. Ju mörkare en del av masken är, desto mindre når effekten dit.",
+  "Använd den: dra maskens flik till bildens vänstra kant (eller Mask › Select Mask). Skyddade områden blir röda; Ctrl+K döljer eller visar det röda.",
+  "Kör processen på bilden. Efteråt: Mask › Remove Mask.",
+]
+siril = [
+  "Spara bilden som orig.fit. Gör en kopia, använd effekten på hela kopian (skärpning, mättnad …) och spara den som fx.fit.",
+  "Öppna Image Processing › PixelMath. Lägg till båda bilderna i listan och ge dem variabelnamnen orig och fx.",
+  "Uttryck: fx*orig + orig*(1-orig). Ljusa pixlar (orig nära 1) får den bearbetade versionen; mörka pixlar behåller originalet. Verkställ.",
+  "För en starkare mask (effekt bara på de ljusaste delarna), använd orig*orig som vikt: fx*orig*orig + orig*(1-orig*orig).",
+]
+
+[inverted_luminance]
+title = "Inverterad luminansmask (effekt på de mörka delarna)"
+what = "Svart där bilden är ljus, vit där den är mörk. En process som används genom den påverkar himlen och de svaga utkanterna och lämnar det ljusa objektet i fred: standardmasken för brusreducering."
+pixinsight = [
+  "Gör en luminansmask (duplicera, sträck om linjär, Image › Extract › Lightness, Convolution StdDev 3–5 px, HistogramTransformation för att skilja himmel och objekt).",
+  "Dra maskens flik till bildens vänstra kant för att använda den.",
+  "Mask › Invert Mask. Nu visas objektet rött (skyddat) och himlen klar (öppen för effekten). Ctrl+K växlar det röda.",
+  "Kontrollera objektets kant: om brusreduceringen ska nå de svaga yttre delarna, gör maskens mellantoner mörkare och använd den igen.",
+  "Kör brusreduceringen och sedan Mask › Remove Mask.",
+]
+siril = [
+  "Spara bilden som orig.fit. Gör en kopia, kör brusreduceringen på hela kopian och spara den som dn.fit.",
+  "Öppna Image Processing › PixelMath. Lägg till båda bilderna och ge dem namnen orig och dn.",
+  "Uttryck: dn*(1-orig) + orig*orig. Mörka pixlar får den brusreducerade versionen; ljusa pixlar behåller originalets detaljer. Verkställ.",
+  "Vill du att brusreduceringen ska nå ljusare områden också? Använd (1-orig*orig) som vikt: dn*(1-orig*orig) + orig*orig*orig.",
+]
+
+[star]
+title = "Stjärnmask (effekt bara på stjärnorna)"
+what = "Vit på stjärnorna, svart överallt annars. Använd den för att krympa, avmätta eller färga om stjärnor utan att röra nebulosan eller galaxen."
+pixinsight = [
+  "Enklast: kör StarNet2 (eller StarXTerminator) på en dubblett med 'Generate star image' (StarXTerminator) eller 'Generate star mask' (StarNet2) ikryssat. Stjärnbilden den skapar är masken.",
+  "Eller det klassiska verktyget: StarMask på en sträckt kopia. Börja med Noise threshold 0,15, Scale 5, Large-scale 2, Small-scale 1, Smoothness 16. Höj noise threshold om nebulosans struktur syns i masken; höj Scale om stora stjärnor missas.",
+  "Väx masken lite så att stjärnornas kanter kommer med: MorphologicalTransformation, Dilation, storlek 3–5, på masken; sedan Convolution StdDev 1–2 px för att mjuka upp den.",
+  "Dra masken till bildens vänstra kant. Stjärnorna är nu öppna, allt annat rött. Kör processen (MorphologicalTransformation Erosion för mindre stjärnor, CurvesTransformation för färg) och ta sedan bort masken.",
+]
+siril = [
+  "Image Processing › Star Processing › StarNet Star Removal, med 'Generate star mask' ikryssat. Du får en stjärnlös bild och en stjärnbild.",
+  "Arbeta på stjärnbilden för sig (krymp den, ändra dess sträckning eller mättnad).",
+  "Sätt ihop de två igen med Image Processing › Star Processing › Star Recomposition, där ett reglage bestämmer hur starkt stjärnorna kommer tillbaka.",
+]
+
+[range]
+title = "Range-mask (effekt bara på objektet, skarp kant)"
+what = "Vit på allt över en ljusnivå (objektet), svart under den, med en mjuk kant du styr. Mer exakt än en luminansmask när objektet och himlen ställvis är lika ljusa."
+pixinsight = [
+  "Arbeta på en sträckt dubblett (eller på den stjärnlösa versionen, så att stjärnor inte hamnar i masken).",
+  "Öppna RangeSelection och slå på Real-Time Preview.",
+  "Höj Lower limit (ungefär 0,15–0,30) tills himlen blir svart och bara objektet förblir vitt. Låt Upper limit stå på 1,0.",
+  "Fuzziness 0,1–0,2 och Smoothness 3–8 ger en mjuk övergång. Använd på dubbletten: den bilden är masken.",
+  "Dra den till bildens vänstra kant, kör processen, ta bort masken.",
+]
+siril = [
+  "Gör effekten på en kopia och spara båda versionerna (orig.fit och fx.fit).",
+  "I PixelMath, använd en vikt som bara slås på över en nivå t (till exempel 0.25): fx*max(0, min(1, (orig-0.25)*5)) + orig*(1-max(0, min(1, (orig-0.25)*5))). Talet 5 bestämmer hur mjuk kanten är.",
+]
+
+[corner]
+title = "Hörnmask (effekt bara i ett hörn)"
+what = "Vit i ett hörn, tonar till svart mot resten av bilden. Använd den för att reparera stjärnor eller en gradient i ett enda hörn."
+pixinsight = [
+  "Öppna PixelMath. Bocka ur 'Use a single RGB/K expression' bara om du behöver färg; för en mask, låt den vara ikryssad.",
+  "Uttryck för övre högra hörnet: iif(x()>w()*2/3 && y()<h()/3, 1, 0). (Övre vänstra: x()<w()/3 && y()<h()/3. Nedre högra: x()>w()*2/3 && y()>h()*2/3.)",
+  "Under Destination: Create new image, Colour space Grayscale. Använd på din bild (den nya bilden får dess storlek).",
+  "Mjuka upp kanten: Convolution, StdDev 40–80 px, på den nya masken.",
+  "Dra masken till bildens vänstra kant, kör reparationen (till exempel MorphologicalTransformation genom den kombinerad med en stjärnmask: multiplicera de två maskerna i PixelMath, corner*stars) och ta sedan bort masken.",
+]
+siril = [
+  "Siril kan inte begränsa ett verktyg till ett hörn. Beskär bort hörnet (Image › Crop), eller bearbeta stjärnorna där för sig efter StarNet och sätt ihop igen.",
+]

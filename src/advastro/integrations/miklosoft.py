@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from advastro.frame import ARCSEC_PER_RADIAN
+from advastro.i18n import tr
 
 
 @dataclass
@@ -99,8 +100,7 @@ def _entry(d: dict) -> LogEntry:
         # Known session-app bug: the gain is stored in 'sub' for cal entries.
         if e.exposure_s > 30 or (e.gain is not None and e.exposure_s == e.gain):
             e.warnings.append(
-                f"logged flat exposure {e.exposure_s} s is implausible "
-                "(equals the gain?); using each file's EXPTIME instead")
+                tr("cli.flat_exposure", s=e.exposure_s))
             e.exposure_s = None
     return e
 

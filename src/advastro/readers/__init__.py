@@ -10,6 +10,7 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 
 from advastro.frame import Frame
+from advastro.i18n import tr
 from advastro.readers import fits, xisf
 
 READERS: dict[str, Callable[[Path], Frame]] = {
@@ -32,7 +33,7 @@ def read_frame(path: str | Path) -> Frame:
     path = Path(path)
     reader = READERS.get(path.suffix.lower())
     if reader is None:
-        raise UnsupportedFormatError(f"Unsupported file type: {path.suffix} ({path.name})")
+        raise UnsupportedFormatError(tr("read.err.type", ext=path.suffix, name=path.name))
     return reader(path)
 
 

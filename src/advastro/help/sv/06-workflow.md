@@ -10,7 +10,7 @@ eller **Siril** (växla med knapparna överst). **Kopiera** lägger det i urklip
 
 - **Insikter** överst: det viktigaste om sessionen, till exempel "mer integrationstid hjälper
   mest", "kontrollera kalibreringsbilderna" eller "stjärnrikt Vintergatsfält".
-- **Steg**, grupperade i faser: *Förbered*, *Kalibrera*, *Stacka*, *Linjär bearbetning*,
+- **Steg**, grupperade i faser: *Förbered*, *Kalibrera*, *Stapla*, *Linjär bearbetning*,
   *Sträckning*, *Icke-linjär bearbetning* och *Slutför*.
 - Varje steg anger **processen** (PixInsight) eller verktyget (Siril), **var den finns** i
   menyerna, **inställningarna** med dina siffror, och **varför**.

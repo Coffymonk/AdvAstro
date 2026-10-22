@@ -7,12 +7,10 @@ picture are marked, so the user sees where their own image needs the most work.
 
 from __future__ import annotations
 
-import tomllib
 from dataclasses import dataclass, field
-from functools import cache
-from importlib import resources
 
-from advastro.rate.objects import NAMES, WITH_ARTICLE
+from advastro.i18n import load_data, tr
+from advastro.rate.objects import NAMES
 
 
 @dataclass
@@ -34,10 +32,8 @@ class TargetWorkflow:
     stages: list[Stage]
 
 
-@cache
 def _data() -> dict:
-    return tomllib.loads(resources.files("advastro.rate").joinpath("workflows.toml")
-                         .read_text(encoding="utf-8"))
+    return load_data("advastro.rate", "workflows.toml")
 
 
 def target_workflow(rating, tool: str = "PixInsight", addons: list[str] | None = None
@@ -49,8 +45,8 @@ def target_workflow(rating, tool: str = "PixInsight", addons: list[str] | None =
     key = tool.lower()
     addons = addons or []
     issues = {f.id: f.title for f in rating.findings if f.severity != "good"}
-    obj = f"{ctx.name}, {WITH_ARTICLE[kind]}" if ctx.name and kind != "unknown" else \
-        WITH_ARTICLE.get(kind, "your target")
+    obj = f"{ctx.name}, {tr('rate.a.' + kind)}" if ctx.name and kind != "unknown" else \
+        tr("rate.a." + kind)
     intro = data["intro"]["all"].format(object=obj)
     about = data["intro"].get(kind, data["intro"]["unknown"])
     stages = []
@@ -73,14 +69,16 @@ def target_workflow(rating, tool: str = "PixInsight", addons: list[str] | None =
 
 
 def workflow_markdown(wf: TargetWorkflow, tool: str) -> str:
-    lines = [f"# Processing workflow ({tool})", "", wf.intro, "", wf.about, ""]
+
+    lines = [f"# {tr('rate.report.wf_title', tool=tool)}", "", wf.intro, "", wf.about, ""]
     for i, st in enumerate(wf.stages, 1):
-        lines.append(f"## {i}. {st.title}" + (" (linear)" if st.linear else ""))
+        lines.append(f"## {i}. {st.title}" +
+                     (f" ({tr('rate.report.wf_linear')})" if st.linear else ""))
         lines += ["", st.explain, ""]
         if st.needed_by:
-            lines += [f"**Your image:** {', '.join(st.needed_by)}.", ""]
+            lines += [f"**{tr('rate.report.wf_yours')}:** {', '.join(st.needed_by)}.", ""]
         if st.note:
-            lines += [f"*For this object:* {st.note}", ""]
+            lines += [f"*{tr('rate.report.wf_note')}:* {st.note}", ""]
         lines += [f"{n}. {s}" for n, s in enumerate(st.steps, 1)]
         lines.append("")
     return "\n".join(lines)

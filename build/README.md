@@ -89,8 +89,8 @@ Push a version tag and GitHub Actions builds all three platforms with this same
 script, then publishes a release with the packages and the source code:
 
 ```
-git tag v0.1.0
-git push origin v0.1.0
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
 ## Not signed yet

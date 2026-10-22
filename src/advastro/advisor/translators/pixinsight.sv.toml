@@ -1,0 +1,98 @@
+# Svensk text för pixinsight.toml: inställningar och anteckningar. Processnamn och menyer
+# står på engelska, som i PixInsight. Varianterna matchas i samma ordning som i originalet.
+
+[[select_subs]]
+settings = ["Lights: lägg bara till filerna från listan över behållna ({kept} delbilder)"]
+
+[[reference_frame]]
+settings = ["Mode: manual", "Reference: {best_sub}"]
+note = "Eller låt det stå på Auto: WBPP väljer då efter sina egna kvalitetsvikter."
+
+[[calibrate]]
+settings = ["Lägg till kalibreringsbilderna ({cal_found})", "Låt WBPP matcha dem mot ljusbilderna efter exponering, binning och filter", "Flats: kalibreras med {flat_cal}", "Optimize dark frames: {dark_optimize}"]
+
+[[cosmetic]]
+settings = ["Hot pixel sigma: {hot_sigma:.1f}", "Cold pixel sigma: {cold_sigma:.1f}"]
+
+[[debayer]]
+settings = ["CFA pattern: Auto ({bayer})", "Method: VNG"]
+
+[[register]]
+settings = ["Standardinställningarna fungerar; slå på distortionskorrigering för vida fält"]
+
+[[local_normalization]]
+settings = ["Slå på lokal normalisering", "Referens: auto (eller referensbilden)"]
+
+[[integrate]]
+settings = ["Weights: PSF Signal Weight", "Rejection: {rejection}", "Sigma low / high: {sigma_low:.1f} / {sigma_high:.1f}"]
+note = "WBPP:s Auto-avvisning väljer en liknande metod åt dig."
+
+[[drizzle]]
+settings = ["Slå på drizzle (Bayer drizzle för färgdata)", "Scale: {drizzle_scale}x", "Drop shrink: {drop_shrink:.1f}"]
+[[drizzle]]
+settings = ["Slå på drizzle", "Scale: {drizzle_scale}x", "Drop shrink: {drop_shrink:.1f}"]
+
+[[crop]]
+settings = ["Beskär tills ingen ojämn kant finns kvar"]
+note = "WBPP:s Autocrop ger en master som redan är beskuren."
+
+[[gradient]]
+settings = ["Operation: Background Extraction", "Method: AI", "Correction: Subtraction"]
+[[gradient]]
+settings = ["Placera 15–25 punkter för hand, bara på mörk himmel", "Tolerance: 0,5–1,0", "Correction: Subtraction"]
+[[gradient]]
+settings = ["ABE function degree: 1–2", "Correction: Subtraction"]
+
+[[solve_image]]
+settings = ["Right ascension / Declination: från rådtexten", "Resolution: {scale:.2f}″/px"]
+
+[[color_calibration]]
+settings = ["Narrowband filters mode: på", "Röd: Hα 656,3 nm; grön och blå: OIII 500,7 nm (ditt filters bandbredder)", "Background neutralization: på"]
+[[color_calibration]]
+settings = ["Sensor: din kameras QE-kurva (eller Ideal QE)", "Filters: dina RGB- eller OSC-filter", "White reference: Average Spiral Galaxy", "Background neutralization: på"]
+
+[[deconvolution]]
+settings = ["Sharpen stars: {sharpen_stars:.2f}", "Sharpen nonstellar: {sharpen_nonstellar:.2f}", "PSF diameter: Automatic"]
+[[deconvolution]]
+settings = ["PSF: External, gjord med skriptet PSFImage från omättade stjärnor", "Algoritm: Regularized Richardson-Lucy, 20–40 iterationer", "Deringing: på, med en stjärnmask"]
+
+[[noise_linear]]
+settings = ["Denoise: {nr_strength:.2f}", "Detail: 0,15"]
+[[noise_linear]]
+settings = ["4 lager, brusreduceringsgränser 3 / 2 / 1 / 0,5", "Amount: {nr_strength:.2f}", "Linjär mask för att skydda ljusa partier"]
+
+[[star_separation]]
+settings = ["Generate star image: på", "Unscreen stars: på"]
+[[star_separation]]
+settings = ["Generate star mask: på"]
+
+[[narrowband_extract]]
+settings = ["Hα: $T[0]  (röd kanal)", "OIII: ($T[1] + $T[2]) / 2  (grön och blå)", "Kombinera med ChannelCombination: R = Hα, G = OIII, B = OIII"]
+
+[[stretch]]
+settings = ["Stretch factor: 10–40", "Black point: strax till vänster om histogrammets topp"]
+[[stretch]]
+settings = ["Symmetry point: bakgrundens topp", "Highlight protection: 0,85–0,95", "Upprepa små sträckningar hellre än en stor"]
+
+[[stretch_stars]]
+settings = ["Använd på stjärnbilden", "Stretch factor: 20–60"]
+
+[[hdr]]
+settings = ["Layers: 6–8", "Lightness mask: på", "To lightness: på"]
+
+[[local_contrast]]
+settings = ["Bias +0,05 till +0,15 på lager 2–4", "Genom en mask på galaxen"]
+[[local_contrast]]
+settings = ["Kernel radius: 64–128", "Contrast limit: 1,5–2,0", "Amount: 0,25–0,35"]
+
+[[saturation]]
+settings = ["Mättnadskurva: mjuk S-form", "Genom en luminansmask"]
+
+[[star_recombine]]
+settings = ["Uttryck: ~((~starless)*(~(stars*0.8)))", "Sänk 0.8 för att dämpa stjärnorna"]
+
+[[cluster_stars]]
+settings = ["Ingen stjärnborttagning", "Mättnadshöjning genom en stjärnmask"]
+
+[[export]]
+settings = ["Master: XISF 32-bit float", "För att dela: TIFF 16 bitar eller JPEG kvalitet 95"]

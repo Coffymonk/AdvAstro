@@ -385,63 +385,58 @@ class SkyResult:
     errors: dict[str, str] = dc_field(default_factory=dict)
 
     def findings(self) -> list[Finding]:
+        from advastro.i18n import tr
+
         F = []
         d = self.depth
         if d and d.limit_mag is not None:
             lim = d.limit_mag
-            mag_txt = f"{'at least ' if d.lower_bound else ''}{lim:.1f}"
+            mag_txt = tr("rate.f.depth.at_least", mag=f"{lim:.1f}") if d.lower_bound \
+                else f"{lim:.1f}"
             wide = self.field is not None and self.field.width_deg > 3
             good, fine = (15.5, 13.5) if wide else (18.0, 16.0)
-            if lim >= good:
-                sev, text = "good", "That is deep for this field of view."
-            elif lim >= fine:
-                sev, text = "info", "Typical depth for a few hours of integration."
-            else:
-                sev, text = "minor", "Fairly shallow: more integration time would show more."
-            title = {"good": "Deep image", "info": "Moderate depth", "minor": "Shallow image"}[sev]
-            F.append(Finding("depth", "depth", sev, title,
-                             f"Stars are visible down to Gaia magnitude {mag_txt} (half of the "
-                             f"catalogue stars at that brightness are detected). {text}",
+            sev = "good" if lim >= good else "info" if lim >= fine else "minor"
+            text = tr(f"rate.f.depth.{sev}_text")
+            F.append(Finding("depth", "depth", sev, tr(f"rate.f.depth.{sev}_title"),
+                             tr("rate.f.depth.text", mag=mag_txt, verdict=text),
                              facts={"limit_mag": mag_txt, "depth_text": text}))
         c = self.colour
         if c:
             if c.r >= 0.6:
                 hue = "neutral"
                 if c.sun_offset > 0.15:
-                    hue = "a little warm (red)"
+                    hue = "warm"
                 elif c.sun_offset < -0.15:
-                    hue = "a little cool (blue)"
+                    hue = "cool"
                 F.append(Finding("color_calibration_ok", "colour",
                                  "good" if hue == "neutral" else "info",
-                                 "Star colours follow their true colours",
-                                 f"Picture star colours track Gaia colours well (r = {c.r:.2f}); "
-                                 f"a Sun-like star appears {hue}."))
+                                 tr("rate.f.color_calibration_ok.title"),
+                                 tr("rate.f.color_calibration_ok.text", r=f"{c.r:.2f}",
+                                    hue=tr(f"rate.f.color_calibration_ok.{hue}"))))
             elif c.r >= 0.3:
-                F.append(Finding("color_calibration", "colour", "minor", "Star colours partly off",
-                                 f"Star colours only loosely follow Gaia (r = {c.r:.2f}).",
+                F.append(Finding("color_calibration", "colour", "minor",
+                                 tr("rate.f.color_calibration.partly_title"),
+                                 tr("rate.f.color_calibration.partly_text", r=f"{c.r:.2f}"),
                                  facts={"color_r": f"{c.r:.2f}",
-                                        "color_text": "Colour calibration can be improved."}))
+                                        "color_text": tr("rate.f.color_calibration.partly_tip")}))
             else:
                 F.append(Finding("color_calibration", "colour", "minor" if c.r > 0 else "major",
-                                 "Star colours do not match reality",
-                                 f"Star colours do not follow Gaia (r = {c.r:.2f}). With "
-                                 "narrowband or dual-band data that is expected.",
+                                 tr("rate.f.color_calibration.off_title"),
+                                 tr("rate.f.color_calibration.off_text", r=f"{c.r:.2f}"),
                                  facts={"color_r": f"{c.r:.2f}",
-                                        "color_text": "With broadband data, colour calibration "
-                                                      "needs another look."}))
+                                        "color_text": tr("rate.f.color_calibration.off_tip")}))
         t = self.target
         if t is not None and getattr(t, "target", None) is not None:
             cov = t.coverage
             if cov is not None:
                 if cov > 1.3:
-                    text = "The object is larger than the frame; you show a part of it."
+                    text = tr("rate.f.framing.larger")
                 elif cov < 0.05:
-                    text = "The object is small in the frame; a crop or longer focal length " \
-                           "would show it better."
+                    text = tr("rate.f.framing.small")
                 else:
-                    text = f"The object fills about {cov * 100:.0f} % of the frame width."
+                    text = tr("rate.f.framing.fills", pct=f"{cov * 100:.0f}")
                 F.append(Finding("framing", "presentation", "info",
-                                 f"Framing of {t.target.label}", text))
+                                 tr("rate.f.framing.title", name=t.target.label), text))
         return F
 
 

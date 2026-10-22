@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import string
-import tomllib
 from dataclasses import dataclass, field
-from functools import cache
-from importlib import resources
 
 from advastro.advisor.expr import UNKNOWN, evaluate
+from advastro.i18n import load_data, tr
 
 STAGES = ("insight", "prepare", "calibrate", "stack", "linear", "stretch", "nonlinear", "finish")
 TOOLS = ("pixinsight", "siril")
@@ -66,16 +64,12 @@ def render(template: str, values: dict) -> str:
     return _fmt.vformat(template, (), values)
 
 
-@cache
 def _rules() -> list[dict]:
-    text = resources.files("advastro.advisor").joinpath("rules/workflow.toml").read_text("utf-8")
-    return tomllib.loads(text)["step"]
+    return load_data("advastro.advisor", "rules/workflow.toml")["step"]
 
 
-@cache
 def _translator(tool: str) -> dict:
-    path = resources.files("advastro.advisor").joinpath(f"translators/{tool}.toml")
-    return tomllib.loads(path.read_text("utf-8"))
+    return load_data("advastro.advisor", f"translators/{tool}.toml")
 
 
 def _value(v, facts):
@@ -118,15 +112,17 @@ def advise(facts: dict, tools: list[str] | None = None) -> Advice:
     steps.sort(key=lambda r: STAGES.index(r.stage))
     level = "solved" if facts.get("solved") else ("pointing" if facts.get("located") else (
         "name" if family != "unknown" else "none"))
-    return Advice(family, facts.get("target_label", "the target"), level, insights, steps)
+    return Advice(family, facts.get("target_label") or tr("adv.f.the_target"), level, insights,
+                  steps)
 
 
 def to_markdown(advice: Advice, tool: str) -> str:
     """The workflow as a Markdown checklist, for export and the command line."""
     names = {"pixinsight": "PixInsight", "siril": "Siril"}
-    lines = [f"# Processing workflow for {advice.target_label} ({names.get(tool, tool)})", ""]
+    lines = [f"# {tr('adv.md.title', target=advice.target_label, tool=names.get(tool, tool))}",
+             ""]
     if advice.insights:
-        lines.append("## Worth knowing first")
+        lines.append(f"## {tr('adv.md.insights')}")
         for r in advice.insights:
             lines.append(f"- **{r.title}.** {r.why}")
         lines.append("")
@@ -135,7 +131,7 @@ def to_markdown(advice: Advice, tool: str) -> str:
     for r in advice.steps:
         if r.stage != stage:
             stage = r.stage
-            lines += ["", f"## {stage.capitalize()}"]
+            lines += ["", f"## {tr(f'gui.stage.{stage}')}"]
         n += 1
         t = r.tools.get(tool)
         lines.append(f"{n}. **{r.title}** — {r.why}")
@@ -143,5 +139,5 @@ def to_markdown(advice: Advice, tool: str) -> str:
             lines.append(f"    - *{t.process}* ({t.menu})")
             lines += [f"    - {s}" for s in t.settings]
             if t.note:
-                lines.append(f"    - Note: {t.note}")
+                lines.append(f"    - {tr('adv.md.note')}: {t.note}")
     return "\n".join(lines).strip() + "\n"

@@ -20,6 +20,7 @@ pixel_scale_from = "from {source}"
 flagged = "Subs flagged for review"
 none_flagged = "No subs flagged."
 config_warning = "Config warning: {message}"
+flat_exposure = "logged flat exposure {s} s is implausible (equals the gain?); using each file's EXPTIME instead"
 
 [sampling]
 undersampled = "undersampled: stars under 2 px; drizzle 2x is worth testing if subs are dithered"
@@ -515,6 +516,10 @@ polish = "Polish"
 solve = "Plate solving"
 gaia = "Gaia"
 survey = "Survey image"
+layout = "Unsupported channel layout {shape}"
+cfa = "This file is undebayered camera data, not a finished picture. Use the main window to analyze subs."
+small = "The picture is too small to analyze (under 64 pixels)."
+type = "Unsupported picture type: {type}"
 
 [rate.d]
 file = "File"
@@ -682,3 +687,596 @@ no = "With stars"
 [rate.wf_phase]
 linear = "Linear data (before the stretch)"
 stretched = "After the stretch"
+
+[rate.f.linear]
+title = "The image has not been stretched yet"
+text = "The data is still linear, so the faint signal is not visible. The rest of this report judges an automatic stretch of it."
+
+[rate.f.crushed_black]
+title = "Crushed black background"
+text = "The sky is at {sky_pct} % with {black_clip} % of the pixels clipped to black. Faint stars and faint nebulosity are cut away."
+
+[rate.f.dark_background_minor]
+title = "Very dark background"
+text = "The sky sits at {sky_pct} % brightness. Faint detail near the background is hard to see."
+
+[rate.f.dark_background_info]
+title = "Dark background"
+text = "The sky sits at {sky_pct} %, on the dark side. Fine if that is your style."
+
+[rate.f.sky_level]
+title = "Background level is well judged"
+text = "The sky sits at {sky_pct} % brightness: dark, but not clipped."
+
+[rate.f.bright_background_minor]
+title = "Background a bit bright"
+text = "The sky sits at {sky_pct} %, which looks slightly grey and hazy."
+
+[rate.f.bright_background_major]
+title = "Washed-out background"
+text = "The sky sits at {sky_pct} %: grey rather than dark. Contrast suffers."
+
+[rate.f.shadow_clip]
+title = "Clipped shadows"
+text = "{black_clip} % of the pixels have a colour channel clipped to zero."
+
+[rate.f.clipped_highlights]
+title = "Burned-out highlights"
+text = "{extended_clip_px} pixels outside star cores are clipped to full white ({clip_pct} % of the frame)."
+
+[rate.f.highlights_ok]
+title = "No burned-out highlights"
+text = "Bright areas keep their structure; only star cores reach full white."
+
+[rate.f.low_contrast]
+title = "Low contrast"
+text = "The brightest parts of the object reach only {contrast_pct} % above the background."
+
+[rate.f.low_contrast_minor]
+title = "Object could be brighter"
+text = "The object rises {contrast_pct} % above the background; there is room to stretch further."
+
+[rate.f.contrast_ok]
+title = "Good contrast"
+text = "The object stands out clearly from the background."
+
+[rate.f.banding]
+title = "Histogram gaps (banding)"
+text = "{comb_pct} % of the levels in the used range are empty: the image was stretched after being reduced to 8 bits."
+
+[rate.f.banding_risk]
+title = "Risk of visible banding"
+text = "{plateau_pct} % of the sky consists of flat 8-bit steps."
+
+[rate.f.gradient_milkyway]
+title = "Brightness changes across the field"
+text = "The background changes by {gradient_pct} %{direction}. In a Milky Way field much of that is the Milky Way itself; check that the darkest corners are neutral and even."
+
+[rate.f.gradient]
+title = "Uneven background (gradient)"
+text = "The background brightness changes by {gradient_pct} % of full scale across the frame{direction}."
+
+[rate.f.gradient_slight]
+title = "Slightly uneven background"
+text = "The background changes by {gradient_pct} %{direction}. If that is real nebulosity in your field, it is fine."
+
+[rate.f.flat_background]
+title = "Even background"
+text = "No significant gradient ({gradient_pct} % variation)."
+
+[rate.f.color_gradient]
+title = "Colour gradient"
+text = "The sky changes colour across the frame (up to {color_gradient_pct} %)."
+
+[rate.f.color_gradient_slight]
+title = "Slight colour gradient"
+text = "The sky colour changes a little across the frame ({color_gradient_pct} %)."
+
+[rate.f.green_cast]
+title = "Green tint in the sky"
+text = "The background is {green_pct} % greener than neutral."
+
+[rate.f.color_cast]
+title = "{hue_title} background"
+text = "The sky is tinted {cast_name}: the channels differ by {cast_pct} % of full scale."
+
+[rate.f.neutral_sky]
+title = "Neutral background colour"
+text = "The sky is close to neutral grey."
+
+[rate.f.noise_major]
+title = "Grainy background"
+text = "Noise in the sky is {noise_pct} % of full scale: clearly visible."
+
+[rate.f.noise_minor]
+title = "Visible grain"
+text = "Noise in the sky is {noise_pct} % of full scale."
+
+[rate.f.plastic]
+title = "Background looks over-smoothed"
+text = "The sky has almost no grain at all ({noise_pct} %), which can look plastic."
+
+[rate.f.noise_ok]
+title = "Clean background"
+text = "Noise is low ({noise_pct} % of full scale)."
+
+[rate.f.color_noise]
+title = "Colour noise"
+text = "The grain is coloured ({chroma_pct} % chroma noise)."
+
+[rate.f.mottle]
+title = "Blotchy background (mottle)"
+text = "The sky shows blotches a few pixels wide ({mottle_pct} % amplitude)."
+
+[rate.f.walking_noise]
+title = "Possible walking noise"
+text = "The background noise has a direction (streaks at about {walking_angle}°)."
+
+[rate.f.hot_pixels]
+title = "Hot pixels left"
+text = "{hot_pixels} isolated bright pixels."
+
+[rate.f.starless_manual]
+title = "Judged as a starless image"
+text = "Star checks are skipped (you marked it as starless). Background, colour, tonality and detail are judged as usual."
+
+[rate.f.starless_auto]
+title = "Judged as a starless image"
+text = "Star checks are skipped: almost no real stars were found. Background, colour, tonality and detail are judged as usual."
+
+[rate.f.trailed_stars]
+title = "Elongated stars"
+text = "Stars are stretched in one direction (median elongation {ellipticity})."
+
+[rate.f.round_stars]
+title = "Round stars"
+text = "Stars are round across the frame (median elongation {ellipticity})."
+
+[rate.f.stars_soft_major]
+title = "Large, soft stars"
+text = "Stars are {fwhm} pixels across at half brightness."
+
+[rate.f.stars_soft_minor]
+title = "Stars on the large side"
+text = "Stars are {fwhm} pixels across at half brightness."
+
+[rate.f.tight_stars]
+title = "Tight stars"
+text = "Stars are small and well defined ({fwhm} px)."
+
+[rate.f.big_stars]
+title = "Bright stars dominate"
+text = "The brightest stars are {fwhm_bright} pixels across."
+
+[rate.f.star_dominance]
+title = "Stars crowd the object"
+text = "Stars cover about {star_area} % of the frame."
+
+[rate.f.corner_stars]
+title = "Softer stars in the corners"
+text = "Corner stars are {corner_pct} % larger than in the centre{shape}."
+
+[rate.f.tilt]
+title = "Uneven sharpness between the corners"
+text = "The sharpest and softest corners differ by {tilt_pct} %. Sensor tilt is one possible cause; spacing, collimation, flexure and how the subs were stacked are others (see Improve)."
+
+[rate.f.flat_field]
+title = "Sharp to the corners"
+text = "Corner stars match the centre (within {within_pct} %)."
+
+[rate.f.corner_elongation]
+title = "Stretched stars in the {corner} corner"
+text = "Stars in the {corner} corner are elongated ({ecc}, against {centre} in the centre)."
+
+[rate.f.star_rings_major]
+title = "Dark rings around stars"
+text = "{ring_pct} % of the bright stars have a dark ring."
+
+[rate.f.star_rings_minor]
+title = "Some stars have dark rings"
+text = "{ring_pct} % of the bright stars have a dark ring."
+
+[rate.f.star_color]
+title = "Colourless stars"
+text = "The stars show little colour variety."
+
+[rate.f.star_color_ok]
+title = "Colourful stars"
+text = "Stars show a natural range of colours."
+
+[rate.f.white_cores]
+title = "White star cores"
+text = "{white_pct} % of the bright stars have clipped white cores."
+
+[rate.f.magenta_stars]
+title = "Magenta stars"
+text = "{magenta_pct} % of the stars are magenta."
+
+[rate.f.fringe]
+title = "{hue_title} star rims"
+text = "Stars are {px} px larger in {channel} than in the other colours."
+
+[rate.f.fringe_lateral]
+title = "Colour fringes towards the edges"
+text = "Red and blue are offset by {px} px in the outer field."
+
+[rate.f.few_stars]
+title = "Few stars to measure"
+text = "Too few stars were found for a star assessment (starless image?)."
+
+[rate.f.muted_major]
+title = "Almost colourless"
+text = "Median saturation of the object is {saturation_pct} %."
+
+[rate.f.muted_minor]
+title = "Muted colours"
+text = "Median saturation of the object is {saturation_pct} %."
+
+[rate.f.oversaturated_major]
+title = "Oversaturated colours"
+text = "{sat_high} % of the object is near full saturation."
+
+[rate.f.oversaturated_minor]
+title = "Strong saturation"
+text = "{sat_high} % of the object is near full saturation."
+
+[rate.f.saturation_ok]
+title = "Well-balanced saturation"
+text = "Colours are rich without being garish (median {saturation_pct} %)."
+
+[rate.f.channel_clip]
+title = "Clipped colour channel"
+text = "{channel_clip} % of the object has one colour channel clipped."
+
+[rate.f.low_detail]
+title = "Little fine detail"
+text = "Fine structure barely rises above the noise."
+
+[rate.f.detail_ok]
+title = "Good fine detail"
+text = "Fine structure stands well above the noise ({detail_ratio}x)."
+
+[rate.f.jpeg_major]
+title = "Heavy JPEG compression"
+text = "Quality about {jpeg_quality}, with visible 8x8 blocks ({blockiness}x)."
+
+[rate.f.jpeg_minor]
+title = "Noticeable JPEG compression"
+text = "Quality about {jpeg_quality} ({blockiness}x block edges)."
+
+[rate.f.edges_one]
+title = "Stacking edges not cropped"
+text = "Ragged or dark borders on the {edges} side."
+
+[rate.f.edges_many]
+title = "Stacking edges not cropped"
+text = "Ragged or dark borders on the {edges} sides."
+
+[rate.f.clean_edges]
+title = "Clean edges"
+text = "No stacking borders left."
+
+[rate.f.small_image]
+title = "Small image"
+text = "Only {megapixels} megapixels."
+
+[rate.f.eight_bit]
+title = "8-bit file"
+text = "Fine for sharing; keep a 16- or 32-bit master for printing and reprocessing."
+
+[rate.f.off_centre]
+title = "Subject sits off-centre"
+text = "Most of the light is towards the {side}. Deliberate placement can work well; if not, a crop can rebalance the frame."
+
+[rate.w]
+brightest_towards = ", brightest towards the {side}"
+
+[rate.w.dir]
+right = "right"
+lower_right = "lower right"
+bottom = "bottom"
+lower_left = "lower left"
+left = "left"
+upper_left = "upper left"
+top = "top"
+upper_right = "upper right"
+
+[rate.w.corner]
+upper_left = "upper left"
+upper_right = "upper right"
+lower_left = "lower left"
+lower_right = "lower right"
+
+[rate.w.edge]
+top = "top"
+bottom = "bottom"
+left = "left"
+right = "right"
+
+[rate.w.hue]
+red = "red"
+green = "green"
+blue = "blue"
+yellow = "yellow"
+cyan = "cyan"
+magenta = "magenta"
+neutral = "neutral"
+red_blue = "red/blue"
+
+[rate.w.hue_title]
+red = "Red"
+green = "Green"
+blue = "Blue"
+yellow = "Yellow"
+cyan = "Cyan"
+magenta = "Magenta"
+neutral = "Neutral"
+
+[rate.w.channel]
+red = "red"
+green = "green"
+blue = "blue"
+
+[rate.w.shape]
+radial = ", stretched towards the centre or outwards (coma)"
+tangential = ", stretched along circles (astigmatism or field curvature)"
+
+[rate.w.hint]
+default = "Check the spacing between the field flattener or corrector and the sensor (back focus)."
+radial = "Radial elongation means the back focus spacing is off: adjust the flattener or coma corrector spacing in small steps."
+tangential = "Tangential elongation usually means field curvature: a flattener, or a different spacing, helps."
+
+[rate.f.depth]
+at_least = "at least {mag}"
+text = "Stars are visible down to Gaia magnitude {mag} (half of the catalogue stars at that brightness are detected). {verdict}"
+good_title = "Deep image"
+info_title = "Moderate depth"
+minor_title = "Shallow image"
+good_text = "That is deep for this field of view."
+info_text = "Typical depth for a few hours of integration."
+minor_text = "Fairly shallow: more integration time would show more."
+
+[rate.f.color_calibration_ok]
+title = "Star colours follow their true colours"
+text = "Picture star colours track Gaia colours well (r = {r}); a Sun-like star appears {hue}."
+neutral = "neutral"
+warm = "a little warm (red)"
+cool = "a little cool (blue)"
+
+[rate.f.color_calibration]
+partly_title = "Star colours partly off"
+partly_text = "Star colours only loosely follow Gaia (r = {r})."
+partly_tip = "Colour calibration can be improved."
+off_title = "Star colours do not match reality"
+off_text = "Star colours do not follow Gaia (r = {r}). With narrowband or dual-band data that is expected."
+off_tip = "With broadband data, colour calibration needs another look."
+
+[rate.f.framing]
+title = "Framing of {name}"
+larger = "The object is larger than the frame; you show a part of it."
+small = "The object is small in the frame; a crop or longer focal length would show it better."
+fills = "The object fills about {pct} % of the frame width."
+
+[rate.report]
+chosen = "chosen"
+starless = "starless"
+score_line = "**{verdict}** · score {score}/100 (judged at {skill} level) — {headline}"
+picture = "Picture: {context}"
+category = "Category"
+score = "Score"
+verdict = "Verdict"
+improve = "How to improve this image"
+judged = "judged at {skill} level"
+limit = "Limiting magnitude (50 % of Gaia stars detected): G {mag}"
+survey = "{name} view of the same field:"
+star_data = "Star data"
+measurements = "Measurements"
+table_picture = "Picture"
+masks = "Masks: {names} (see the Markdown report)"
+wf_title = "Processing workflow ({tool})"
+wf_yours = "Your image"
+wf_note = "For this object"
+wf_linear = "linear"
+
+[flag]
+fwhm = "stars {value} px vs session median {median} px (seeing, focus drift or wind)"
+ecc = "elongated stars (eccentricity {value}); tracking, guiding or wind"
+stars = "{value} stars vs median {median} (clouds, haze or dew)"
+sky = "sky {value} ADU vs median {median} (moon, dawn, light source or clouds lit from below)"
+
+[cal]
+vs_lights = "{what} {value} vs lights {lights}"
+vs_flats = "{what} {value} vs flats {flats}"
+
+[cal.word]
+exposure = "exposure"
+gain = "gain"
+offset = "offset"
+binning = "binning"
+temperature = "temperature"
+red = "red"
+green = "green"
+blue = "blue"
+
+[cal.kind]
+bias = "bias frames"
+darks = "darks"
+flats = "flats"
+darkflats = "flat darks"
+
+[cal.kind_short]
+bias = "bias"
+darks = "darks"
+flats = "flats"
+darkflats = "flat darks"
+
+[cal.flag]
+setting = "{what} {value} differs from the rest ({common})"
+size = "size {w}×{h} differs from the rest"
+flat_level = "brightness {value} ADU vs {median} for the other flats (panel or sky changed)"
+clipped = "{pct} % of pixels clipped (overexposed)"
+level_high = "level {value} ADU vs {median} (light leak, or not a dark frame?)"
+level_low = "level {value} ADU vs {median} (different offset setting?)"
+noise = "noise {value} ADU vs {median} for the rest"
+
+[cal.note]
+labels = "{n} {kind} are labelled '{said}' in their headers; the folder and the data say {kind}, so AdvAstro uses them as {kind}."
+darks_mismatch = "Darks do not match the lights: {problems}."
+darks_match = "Darks match the lights ({parts})."
+darks_old = "The darks are {days} days older than the lights. A dark library is fine, but refresh it about once a year: sensors change slowly."
+flat_dim = "Flats are dim ({pct} % of full scale). Aim for 30–60 % so their noise does not add to the lights."
+flat_bright = "Flats are very bright ({pct} % of full scale) and may be non-linear. Aim for 30–60 %."
+flat_low = "Flats reach {pct} % of full scale: usable, though 30–60 % gives cleaner masters."
+flat_good = "Flat brightness is good ({pct} % of full scale)."
+flat_channels = "The flats are much dimmer in {lo} ({lo_pct} %) than in {hi} ({hi_pct} %). That is normal for many light sources, but keep the dimmest channel above about 10 %."
+vignetting = "Vignetting: the corners get about {pct} % less light than the centre; the flats correct this."
+dust = "About {n} dust shadows show in the flats (deepest {depth} %). They are corrected as long as nothing in the optical train moved between lights and flats."
+flats_other_night = "The flats are from a different night ({days} days apart). They only match if the camera was not rotated, refocused or cleaned in between."
+flats_same_night = "Flats are from the same night as the lights."
+flat_binning = "Flats are binned {flats}x but the lights {lights}x."
+flatdarks_mismatch = "Flat darks do not match the flats: {problems}."
+flatdarks_match = "Flat darks match the flats{parts}."
+flats_uncalibrated = "Neither flat darks nor bias were found, so the flats cannot be calibrated properly."
+bias_long = "The bias frames are {exp} s exposures, so they behave as short darks. That is fine with flats of the same exposure."
+bias_setting = "Bias {what} {value} differs from the lights ({lights})."
+leak = "The {kind} vary in level from {lo} to {hi} ADU{rising}. That points to light reaching the sensor (a light leak, or darks taken in daylight). Cap the telescope and cover the camera, and leave the brightest frames out."
+leak_rising = ", rising through the series"
+glow = "Amp glow: the {side} is {adu} ADU brighter than the centre. Matching darks remove it; avoid dark scaling or optimization."
+banding = "Row or column banding of {adu} ADU in the {kind}; more frames give a smoother master."
+hot = "{n} hot pixels ({pct} % of the sensor) at this exposure and temperature."
+few = "Only {n} {kind}: {ideal} or more give a master with less noise."
+
+[adv.md]
+title = "Processing workflow for {target} ({tool})"
+insights = "Worth knowing first"
+note = "Note"
+
+[adv.family]
+galaxy = "galaxy"
+emission = "nebula"
+reflection = "reflection nebula"
+planetary = "planetary nebula"
+cluster = "cluster"
+globular = "globular cluster"
+unknown = "object"
+
+[adv.f]
+same_temp = "the same sensor temperature"
+bortle = ", Bortle {n} sky"
+and = "and"
+the_target = "the target"
+strong = " (strong)"
+cosmetic_extra = " Without darks, a slightly lower hot-pixel threshold catches more."
+drizzle_2x = "Stars are only {fwhm} px wide (undersampled) and the subs are dithered ({dither} px between subs), so 2x drizzle with {kept} subs recovers real resolution."
+drizzle_1x = "Dithered colour data can be stacked with Bayer drizzle at 1x: each colour comes from real pixels instead of interpolation, which gives cleaner colour and finer stars."
+drift = " The field drifted {px} px over the session; registration handles that, but check polar alignment."
+grad_level = "The background varies by about {pct} % across the frame"
+grad_level_unknown = "Every sky has some gradient"
+sho_note = " A true SHO palette needs SII data; an SHO look from Hα/OIII alone is an approximation."
+milky_way_note = " — in this Milky Way field, reducing star strength by 20–40 % keeps the nebula in front"
+
+[adv.f.master]
+darks = "a master dark"
+flats = "a master flat"
+bias = "a master bias"
+darkflats = "a master flat dark"
+
+[adv.f.flat_cal]
+darkflats = "the flat darks"
+bias = "the bias frames"
+none = "nothing (none found)"
+
+[adv.f.dark_opt]
+match = "off (the darks match the lights)"
+glow = "off (amp glow)"
+on = "on"
+
+[adv.f.grad_how]
+fills = "{target} fills the frame, so there is little empty sky: place background samples only on truly dark patches, or use an AI model such as GraXpert, and avoid automatic polynomial fits that can remove faint nebulosity."
+galaxy = "There is plenty of empty sky around the galaxy, so an automatic fit (low degree) or a few manual samples away from the galaxy's faint halo works well."
+other = "Place samples on empty sky across the frame, avoiding stars and nebulosity."
+
+[adv.f.solve]
+solved = "Colour calibration needs it. Your session is already solved: centre RA {ra}, Dec {dec}, {scale}″/px. Enter these to solve in seconds."
+pointing = "Colour calibration needs it. Start from the telescope pointing: RA {ra}, Dec {dec}, about {scale}″/px."
+none = "Colour calibration needs an astrometric solution. Enter the image scale and the target name or coordinates to help the solver."
+
+[adv.f.color]
+dual = "Use narrowband mode with your filter's Hα (656 nm) and OIII (500 nm) passbands, so the colours match what the filter really transmits."
+galaxy = "Measures star colours against a photometric catalog. Use an average spiral galaxy as white reference for natural galaxy colour."
+other = "Measures the colours of stars in the field against a photometric catalog and corrects your camera's colour response."
+
+[adv.f.deconv]
+galaxy = ": spiral arms and dust lanes benefit the most"
+planetary = ": the small shell structure benefits the most"
+emission = " in filaments and dark lanes; keep nebula sharpening moderate"
+
+[adv.f.stretch]
+galaxy = "Use a generalized hyperbolic stretch with highlight protection so the core does not burn out while the faint outer arms come up."
+cluster = "Use a gentle arcsinh stretch: it brightens faint stars without bleaching star colour."
+globular = "Use a gentle arcsinh stretch and protect the dense core from saturating."
+other = "Use a generalized hyperbolic stretch with the symmetry point at the background peak: faint nebulosity comes up without bloating the sky."
+
+[adv.f.contrast]
+galaxy = "Medium-scale contrast on the spiral arms brings out dust lanes and HII regions; keep it subtle so the halo stays smooth."
+planetary = "Small-scale contrast brings out shell structure; protect the background."
+other = "Local histogram equalization at large scale brings out filaments and depth in the nebula; apply it to the starless image."
+
+[adv.f.saturation]
+galaxy = "Raise saturation gently on the galaxy (blue arms, pink HII regions), keeping the background neutral."
+other = "Raise saturation on the nebula through a mask, keeping the background neutral."
+
+[sky.src]
+astap_file = "ASTAP solution in the file"
+header = "solution in the file header"
+pointing_header = "telescope pointing in the file header"
+pointing = "telescope pointing"
+name = "name “{name}”"
+
+[sky.err]
+no_astap = "ASTAP was not found"
+no_db = "No ASTAP star database was found"
+timeout = "ASTAP did not finish within {s} s"
+start = "Could not start ASTAP: {error}"
+no_result = "ASTAP did not write a result"
+no_match = "no match with the star database"
+failed = "Plate solving failed: {reason}"
+unreadable = "ASTAP result could not be read"
+
+[cli.target]
+unknown = "Target: unknown (no solution, pointing or name found)."
+line = "Target: {label} ({ids}) — {type}{where}{size}."
+in = " in {const}"
+by = "Identified by: {level} ({source})."
+field = "Field: {w}′ × {h}′ at {scale}″/px, centre RA {ra}°, Dec {dec}°."
+others = "Also in the field: {names}."
+
+[read.err]
+type = "Unsupported file type: {ext} ({name})"
+no_image = "No image data in {name}"
+package = "{codec}-compressed XISF needs the '{package}' package"
+compression = "Unsupported XISF compression: {codec}"
+truncated = "XISF file is truncated"
+block = "Embedded XISF data block is missing"
+location = "Unsupported XISF data location: {kind}"
+not_xisf = "{name} is not an XISF file"
+sample = "Unsupported XISF sample format: {fmt}"
+samples = "{name}: expected {expected} samples, found {found}"
+
+[rate.a]
+galaxy = "a galaxy"
+emission = "an emission nebula"
+reflection = "a reflection nebula"
+planetary = "a planetary nebula"
+dark = "a dark nebula"
+cluster = "an open cluster"
+globular = "a globular cluster"
+milkyway = "a Milky Way field"
+unknown = "your target"
+
+[cli.col]
+file = "File"
+ecc = "Ecc"
+stars = "Stars"
+bkg = "Bkg ADU"
+noise = "Noise"

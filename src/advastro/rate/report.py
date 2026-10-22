@@ -9,16 +9,28 @@ from dataclasses import asdict, fields
 import numpy as np
 
 from advastro import APP_NAME, __version__
+from advastro.i18n import tr
 from advastro.rate.judge import Rating
 
-CATEGORY_NAMES = {"stars": "Stars", "background": "Background", "colour": "Colour",
-                  "detail": "Detail", "tonality": "Tonality", "presentation": "Presentation",
-                  "depth": "Depth"}
-VERDICT_NAMES = {"excellent": "Excellent", "ready": "Ready to share",
-                 "fixable": "Good, with fixable issues", "needs_work": "Needs work"}
-WORD = {"excellent": "Excellent", "good": "Good", "fair": "Fair", "weak": "Weak"}
-SEVERITY = {"critical": "Critical", "major": "Major", "minor": "Minor", "info": "Note",
-            "good": "Good"}
+
+class _Names:
+    """names[key] -> the translation of '<prefix><key>' in the current language."""
+
+    def __init__(self, prefix: str) -> None:
+        self.prefix = prefix
+
+    def __getitem__(self, key: str) -> str:
+        return tr(self.prefix + key)
+
+
+CATEGORY_NAMES = _Names("rate.cat.")
+VERDICT_NAMES = _Names("rate.verdict.")
+WORD = _Names("rate.word.")
+SEVERITY = _Names("rate.sev.")
+
+
+def _skill(r: Rating) -> str:
+    return tr(f"gui.settings.skills.{r.skill}").lower()
 
 
 def _plain(v):
@@ -35,15 +47,13 @@ def _plain(v):
 
 def context_text(r: Rating) -> str:
     """'Emission nebula (North America Nebula, from the name), starless'."""
-    from advastro.rate.objects import NAMES
-
     c = r.context
-    src = {"solve": "from the plate solve", "name": "from the name", "header": "from the file",
-           "manual": "chosen"}.get(c.kind_source, "")
+    src = tr("rate.report.chosen") if c.kind_source == "manual" else \
+        tr(f"rate.kind_source.{c.kind_source}")
     extra = ", ".join(x for x in (c.name, src) if x)
-    text = NAMES.get(c.kind, c.kind) + (f" ({extra})" if extra else "")
+    text = tr(f"rate.kind.{c.kind}") + (f" ({extra})" if extra else "")
     if c.starless:
-        text += ", starless"
+        text += ", " + tr("rate.report.starless")
     return text
 
 
@@ -56,7 +66,7 @@ def _mask_lines(keys: list[str], tool: str | None) -> list[str]:
         m = recipes.get(k)
         if not m:
             continue
-        lines += ["", f"*How to make the mask: {m['title']}.* {m.get('what', '')}"]
+        lines += ["", f"*{tr('rate.mask_how')}: {m['title']}.* {m.get('what', '')}"]
         for t in (["pixinsight", "siril"] if tool is None else [tool.lower()]):
             steps = m.get(t, [])
             if steps:
@@ -118,20 +128,22 @@ def to_json(r: Rating) -> str:
 
 def to_markdown(r: Rating, tool: str | None = None) -> str:
     p = r.picture
-    lines = [f"# Rate my pic: {p.path.name}", "",
-             f"**{VERDICT_NAMES[r.verdict]}** · score {r.score}/100 (judged as "
-             f"{r.skill}) — {r.headline}", "", f"Picture: {context_text(r)}", "",
-             "| Category | Score | Verdict |", "|---|---|---|"]
+    lines = [f"# {tr('rate.title')}: {p.path.name}", "",
+             tr("rate.report.score_line", verdict=VERDICT_NAMES[r.verdict], score=r.score,
+                skill=_skill(r), headline=r.headline), "",
+             tr("rate.report.picture", context=context_text(r)), "",
+             f"| {tr('rate.report.category')} | {tr('rate.report.score')} | "
+             f"{tr('rate.report.verdict')} |", "|---|---|---|"]
     for k, c in r.categories.items():
         lines.append(f"| {CATEGORY_NAMES[k]} | {c.score} | {WORD[c.verdict]} |")
     if r.strengths:
-        lines += ["", "## What works", ""]
+        lines += ["", f"## {tr('rate.what_works')}", ""]
         lines += [f"- **{f.title}.** {f.text}" for f in r.strengths]
     if r.issues:
-        lines += ["", "## Findings", ""]
+        lines += ["", f"## {tr('rate.tab.findings')}", ""]
         lines += [f"- *{SEVERITY[f.severity]}* — **{f.title}.** {f.text}" for f in r.issues]
     if r.plan:
-        lines += ["", "## How to improve this image", ""]
+        lines += ["", f"## {tr('rate.report.improve')}", ""]
         for i, s in enumerate(r.plan, 1):
             lines.append(f"### {i}. {s.finding.title}")
             if s.why:
@@ -143,7 +155,7 @@ def to_markdown(r: Rating, tool: str | None = None) -> str:
             lines += _mask_lines(s.masks, tool)
             lines.append("")
     if r.capture:
-        lines += ["## Next time at the telescope", ""] + [f"- {c}" for c in r.capture]
+        lines += [f"## {tr('rate.capture')}", ""] + [f"- {c}" for c in r.capture]
     lines += ["", f"*{APP_NAME} {__version__}*"]
     return "\n".join(lines) + "\n"
 
@@ -165,10 +177,10 @@ def to_html(r: Rating, images: dict[str, str] | None = None, accent: str = "#2a6
       .muted {{ color: #6b7480; }} td {{ padding: 3px 8px; }}
       .verdict {{ font-size: 15pt; font-weight: bold; color: {colour}; }}
     </style></head><body>
-    <h1>Rate my pic</h1>
+    <h1>{e(tr("rate.title"))}</h1>
     <p class="muted">{e(p.path.name)} · {p.width} × {p.height} · {e(p.format.upper())}
-    {e(p.bit_depth)} · judged as {e(r.skill)} · {APP_NAME} {__version__}<br>
-    Picture: {e(context_text(r))}</p>"""]
+    {e(p.bit_depth)} · {e(tr("rate.report.judged", skill=_skill(r)))} · {APP_NAME} {__version__}<br>
+    {e(tr("rate.report.picture", context=context_text(r)))}</p>"""]
     if images and images.get("picture"):
         out.append(f'<p><img src="{images["picture"]}" width="640"></p>')
     out.append(f'<p><span class="verdict">{e(VERDICT_NAMES[r.verdict])}</span> &nbsp; '
@@ -180,61 +192,65 @@ def to_html(r: Rating, images: dict[str, str] | None = None, accent: str = "#2a6
                    f"<td style='color:{accent}'>{bar}</td><td>{WORD[c.verdict]}</td></tr>")
     out.append("</table>")
     if r.strengths:
-        out.append("<h2>What works</h2><ul>")
+        out.append(f"<h2>{e(tr('rate.what_works'))}</h2><ul>")
         out += [f"<li><b>{e(f.title)}.</b> {e(f.text)}</li>" for f in r.strengths]
         out.append("</ul>")
     if r.issues:
-        out.append("<h2>Findings</h2><ul>")
+        out.append(f"<h2>{e(tr('rate.tab.findings'))}</h2><ul>")
         out += [f"<li><span style='color:{sev_col[f.severity]}'>{SEVERITY[f.severity]}</span>"
                 f" — <b>{e(f.title)}.</b> {e(f.text)}</li>" for f in r.issues]
         out.append("</ul>")
     if r.plan:
-        out.append("<h2>How to improve this image</h2>")
+        out.append(f"<h2>{e(tr('rate.report.improve'))}</h2>")
         for i, s in enumerate(r.plan, 1):
             out.append(f"<h3>{i}. {e(s.finding.title)}</h3><p class='muted'>{e(s.why)}</p>")
             for tool, steps in s.steps.items():
                 out.append(f"<p><b>{e(tool)}</b></p><ol>" +
                            "".join(f"<li>{e(x)}</li>" for x in steps) + "</ol>")
     if r.capture:
-        out.append("<h2>Next time at the telescope</h2><ul>" +
+        out.append(f"<h2>{e(tr('rate.capture'))}</h2><ul>" +
                    "".join(f"<li>{e(c)}</li>" for c in r.capture) + "</ul>")
     if r.sky is not None and (r.sky.field or r.sky.errors):
         s = r.sky
-        out.append("<h2>Sky checks</h2>")
+        out.append(f"<h2>{e(tr('rate.sky_section'))}</h2>")
         if s.field:
             t = getattr(s.target, "target", None)
-            out.append(f"<p>Centre RA {s.field.ra:.4f}°, Dec {s.field.dec:+.4f}°, "
-                       f"{s.field.scale_arcsec:.2f}″/px, field {s.field.width_deg:.2f}° × "
-                       f"{s.field.height_deg:.2f}°" + (f" · {e(t.label)}" if t else "") + "</p>")
+            f = s.field
+            out.append("<p>" + e(tr("rate.field", ra=f"{f.ra:.3f}", dec=f"{f.dec:+.3f}",
+                                    scale=f"{f.scale_arcsec:.2f}", w=f"{f.width_deg:.2f}",
+                                    h=f"{f.height_deg:.2f}", source=f.source))
+                       + (f" · {e(t.label)}" if t else "") + "</p>")
         if s.depth and s.depth.limit_mag:
-            out.append(f"<p>Limiting magnitude (50 % of Gaia stars detected): "
-                       f"G {s.depth.limit_mag:.1f}</p>")
+            out.append(f"<p>{e(tr('rate.report.limit', mag=f'{s.depth.limit_mag:.1f}'))}</p>")
         if s.colour:
-            out.append(f"<p>Star colours vs Gaia: r = {s.colour.r:.2f} "
-                       f"({s.colour.stars} stars)</p>")
+            out.append(f"<p>{e(tr('rate.colour_text', r=f'{s.colour.r:.2f}', n=s.colour.stars))}"
+                       "</p>")
         if images and images.get("survey"):
             from advastro.rate.sky import survey_credit
 
-            out.append(f"<p>{e(s.survey_name or 'Survey')} view of the same field:<br>"
+            credit = tr("rate.credit", source=survey_credit(s.survey_name))
+            out.append(f"<p>{e(tr('rate.report.survey', name=s.survey_name or 'Survey'))}<br>"
                        f'<img src="{images["survey"]}" width="640"><br>'
-                       f"<span class='muted'>Image: {e(survey_credit(s.survey_name))}</span></p>")
+                       f"<span class='muted'>{e(credit)}</span></p>")
         if s.depth or s.colour:
             from advastro.rate.sky import GAIA_CREDIT
 
-            out.append(f"<p class='muted'>Star data: {e(GAIA_CREDIT)}.</p>")
+            out.append(f"<p class='muted'>{e(tr('rate.report.star_data'))}: "
+                       f"{e(GAIA_CREDIT)}.</p>")
         for k, v in s.errors.items():
             out.append(f"<p class='muted'>{e(k)}: {e(v)}</p>")
-    out.append("<h2>Measurements</h2><table cellspacing='0'>")
-    rows = [("Background level", f"{m.sky * 100:.1f} %"),
-            ("Gradient", f"{m.gradient_pct:.1f} %"),
-            ("Noise (pixel / blotch)", f"{m.noise * 100:.2f} % / {m.noise_mid * 100:.2f} %"),
-            ("Stars found", f"{m.star_count:,}"),
-            ("Star size (FWHM)", f"{m.fwhm:.2f} px" if m.fwhm else "–"),
-            ("Elongation", f"{m.ellipticity:.2f}" if m.ellipticity is not None else "–"),
-            ("Corner / centre star size", f"{m.corner_ratio:.2f}" if m.corner_ratio else "–"),
-            ("Saturation (object)", f"{m.saturation * 100:.0f} %"),
-            ("Clipped black / white", f"{m.black_clip_pct:.2f} % / {m.white_clip_pct:.2f} %"),
-            ("Hot pixels", str(m.hot_pixels))]
+    out.append(f"<h2>{e(tr('rate.report.measurements'))}</h2><table cellspacing='0'>")
+    rows = [(tr("rate.d.sky"), f"{m.sky * 100:.1f} %"),
+            (tr("rate.d.gradient"), f"{m.gradient_pct:.1f} %"),
+            (f"{tr('rate.d.noise')} / {tr('rate.d.mottle')}",
+             f"{m.noise * 100:.2f} % / {m.noise_mid * 100:.2f} %"),
+            (tr("rate.d.stars"), f"{m.star_count:,}"),
+            (tr("rate.d.fwhm"), f"{m.fwhm:.2f} px" if m.fwhm else "–"),
+            (tr("rate.d.ecc"), f"{m.ellipticity:.2f}" if m.ellipticity is not None else "–"),
+            (tr("rate.d.corners"), f"{m.corner_ratio:.2f}" if m.corner_ratio else "–"),
+            (tr("rate.d.saturation"), f"{m.saturation * 100:.0f} %"),
+            (tr("rate.d.clip"), f"{m.black_clip_pct:.2f} % / {m.white_clip_pct:.2f} %"),
+            (tr("rate.d.hot"), str(m.hot_pixels))]
     out += [f"<tr><td>{e(a)}</td><td>{e(b)}</td></tr>" for a, b in rows]
     out.append("</table></body></html>")
     return "\n".join(out)

@@ -20,6 +20,7 @@ progress = "[{done}/{total}] {name}"
 pixel_scale_unknown = "okänd (ange brännvidd och pixelstorlek i headers eller config)"
 pixel_scale_from = "från {source}"
 config_warning = "Varning i inställningar: {message}"
+flat_exposure = "den loggade flat-exponeringen {s} s är orimlig (samma som gain?); använder varje fils EXPTIME i stället"
 
 [sampling]
 undersampled = "undersamplad: stjärnor under 2 px; testa drizzle 2x om bilderna är ditherade"
@@ -226,7 +227,7 @@ copy_tip = "Kopiera arbetsflödet som en Markdown-checklista"
 [gui.stage]
 prepare = "Förbered"
 calibrate = "Kalibrera"
-stack = "Stacka"
+stack = "Stapla"
 linear = "Linjär bearbetning"
 stretch = "Sträckning"
 nonlinear = "Icke-linjär bearbetning"
@@ -515,6 +516,10 @@ polish = "Finputs"
 solve = "Plattlösning"
 gaia = "Gaia"
 survey = "Kartbild"
+layout = "Kanalupplägget {shape} stöds inte"
+cfa = "Den här filen är kameradata som inte debayrats, inte en färdig bild. Använd huvudfönstret för att analysera delbilder."
+small = "Bilden är för liten för att analyseras (under 64 pixlar)."
+type = "Bildtypen stöds inte: {type}"
 
 [rate.d]
 file = "Fil"
@@ -682,3 +687,597 @@ no = "Med stjärnor"
 [rate.wf_phase]
 linear = "Linjär data (före sträckningen)"
 stretched = "Efter sträckningen"
+
+[rate.f.linear]
+title = "Bilden är inte sträckt än"
+text = "Datan är fortfarande linjär, så den svaga signalen syns inte. Resten av rapporten bedömer en automatisk sträckning av den."
+
+[rate.f.crushed_black]
+title = "Bakgrunden är klippt till svart"
+text = "Himlen ligger på {sky_pct} % och {black_clip} % av pixlarna är klippta till svart. Svaga stjärnor och svag nebulosa skärs bort."
+
+[rate.f.dark_background_minor]
+title = "Mycket mörk bakgrund"
+text = "Himlen ligger på {sky_pct} % ljusstyrka. Svaga detaljer nära bakgrunden är svåra att se."
+
+[rate.f.dark_background_info]
+title = "Mörk bakgrund"
+text = "Himlen ligger på {sky_pct} %, i mörkaste laget. Det går bra om det är din stil."
+
+[rate.f.sky_level]
+title = "Bakgrundsnivån är väl avvägd"
+text = "Himlen ligger på {sky_pct} % ljusstyrka: mörk, men inte klippt."
+
+[rate.f.bright_background_minor]
+title = "Bakgrunden lite ljus"
+text = "Himlen ligger på {sky_pct} %, vilket ser lite grått och disigt ut."
+
+[rate.f.bright_background_major]
+title = "Urblekt bakgrund"
+text = "Himlen ligger på {sky_pct} %: grå snarare än mörk. Kontrasten blir lidande."
+
+[rate.f.shadow_clip]
+title = "Klippta skuggor"
+text = "{black_clip} % av pixlarna har en färgkanal klippt till noll."
+
+[rate.f.clipped_highlights]
+title = "Utbrända högdagrar"
+text = "{extended_clip_px} pixlar utanför stjärnkärnorna är klippta till helt vitt ({clip_pct} % av bilden)."
+
+[rate.f.highlights_ok]
+title = "Inga utbrända högdagrar"
+text = "Ljusa partier behåller sin struktur; bara stjärnkärnorna når helt vitt."
+
+[rate.f.low_contrast]
+title = "Låg kontrast"
+text = "Objektets ljusaste delar når bara {contrast_pct} % över bakgrunden."
+
+[rate.f.low_contrast_minor]
+title = "Objektet kunde vara ljusare"
+text = "Objektet når {contrast_pct} % över bakgrunden; det finns utrymme att sträcka mer."
+
+[rate.f.contrast_ok]
+title = "Bra kontrast"
+text = "Objektet sticker tydligt ut från bakgrunden."
+
+[rate.f.banding]
+title = "Luckor i histogrammet (bandning)"
+text = "{comb_pct} % av nivåerna i det använda omfånget är tomma: bilden sträcktes efter att den sparats med 8 bitar."
+
+[rate.f.banding_risk]
+title = "Risk för synlig bandning"
+text = "{plateau_pct} % av himlen består av platta 8-bitarssteg."
+
+[rate.f.gradient_milkyway]
+title = "Ljusstyrkan ändras över fältet"
+text = "Bakgrunden ändras med {gradient_pct} %{direction}. I ett Vintergatsfält är mycket av det Vintergatan själv; kontrollera att de mörkaste hörnen är neutrala och jämna."
+
+[rate.f.gradient]
+title = "Ojämn bakgrund (gradient)"
+text = "Bakgrundens ljusstyrka ändras med {gradient_pct} % av full skala över bilden{direction}."
+
+[rate.f.gradient_slight]
+title = "Något ojämn bakgrund"
+text = "Bakgrunden ändras med {gradient_pct} %{direction}. Om det är verklig nebulosa i ditt fält är det inget problem."
+
+[rate.f.flat_background]
+title = "Jämn bakgrund"
+text = "Ingen märkbar gradient ({gradient_pct} % variation)."
+
+[rate.f.color_gradient]
+title = "Färggradient"
+text = "Himlen byter färg över bilden (upp till {color_gradient_pct} %)."
+
+[rate.f.color_gradient_slight]
+title = "Svag färggradient"
+text = "Himlens färg ändras lite över bilden ({color_gradient_pct} %)."
+
+[rate.f.green_cast]
+title = "Grön ton i himlen"
+text = "Bakgrunden är {green_pct} % grönare än neutral."
+
+[rate.f.color_cast]
+title = "{hue_title} bakgrund"
+text = "Himlen har en {cast_name} ton: kanalerna skiljer sig med {cast_pct} % av full skala."
+
+[rate.f.neutral_sky]
+title = "Neutral bakgrundsfärg"
+text = "Himlen är nära neutralt grå."
+
+[rate.f.noise_major]
+title = "Kornig bakgrund"
+text = "Bruset i himlen är {noise_pct} % av full skala: tydligt synligt."
+
+[rate.f.noise_minor]
+title = "Synligt brus"
+text = "Bruset i himlen är {noise_pct} % av full skala."
+
+[rate.f.plastic]
+title = "Bakgrunden ser överutjämnad ut"
+text = "Himlen har nästan inget brus alls ({noise_pct} %), vilket kan se plastigt ut."
+
+[rate.f.noise_ok]
+title = "Ren bakgrund"
+text = "Bruset är lågt ({noise_pct} % av full skala)."
+
+[rate.f.color_noise]
+title = "Färgbrus"
+text = "Bruset är färgat ({chroma_pct} % färgbrus)."
+
+[rate.f.mottle]
+title = "Fläckig bakgrund"
+text = "Himlen har fläckar några pixlar stora ({mottle_pct} % amplitud)."
+
+[rate.f.walking_noise]
+title = "Möjligt vandrande brus"
+text = "Bakgrundsbruset har en riktning (strimmor i ungefär {walking_angle}°)."
+
+[rate.f.hot_pixels]
+title = "Kvarvarande heta pixlar"
+text = "{hot_pixels} isolerade ljusa pixlar."
+
+[rate.f.starless_manual]
+title = "Bedömd som stjärnlös bild"
+text = "Stjärnkontrollerna hoppas över (du har angett att den är stjärnlös). Bakgrund, färg, tonalitet och detaljer bedöms som vanligt."
+
+[rate.f.starless_auto]
+title = "Bedömd som stjärnlös bild"
+text = "Stjärnkontrollerna hoppas över: nästan inga riktiga stjärnor hittades. Bakgrund, färg, tonalitet och detaljer bedöms som vanligt."
+
+[rate.f.trailed_stars]
+title = "Utdragna stjärnor"
+text = "Stjärnorna är utdragna åt ett håll (medianutdragning {ellipticity})."
+
+[rate.f.round_stars]
+title = "Runda stjärnor"
+text = "Stjärnorna är runda över hela bilden (medianutdragning {ellipticity})."
+
+[rate.f.stars_soft_major]
+title = "Stora, mjuka stjärnor"
+text = "Stjärnorna är {fwhm} pixlar breda vid halv ljusstyrka."
+
+[rate.f.stars_soft_minor]
+title = "Ganska stora stjärnor"
+text = "Stjärnorna är {fwhm} pixlar breda vid halv ljusstyrka."
+
+[rate.f.tight_stars]
+title = "Skarpa stjärnor"
+text = "Stjärnorna är små och väldefinierade ({fwhm} px)."
+
+[rate.f.big_stars]
+title = "Ljusa stjärnor dominerar"
+text = "De ljusaste stjärnorna är {fwhm_bright} pixlar breda."
+
+[rate.f.star_dominance]
+title = "Stjärnorna tränger undan objektet"
+text = "Stjärnorna täcker ungefär {star_area} % av bilden."
+
+[rate.f.corner_stars]
+title = "Mjukare stjärnor i hörnen"
+text = "Hörnstjärnorna är {corner_pct} % större än i mitten{shape}."
+
+[rate.f.tilt]
+title = "Ojämn skärpa mellan hörnen"
+text = "Det skarpaste och det mjukaste hörnet skiljer sig med {tilt_pct} %. Sensorlutning är en möjlig orsak; avstånd, kollimering, böjning och hur delbilderna staplades är andra (se Förbättra)."
+
+[rate.f.flat_field]
+title = "Skarpt ut i hörnen"
+text = "Hörnstjärnorna stämmer med mitten (inom {within_pct} %)."
+
+[rate.f.corner_elongation]
+title = "Utdragna stjärnor i {corner} hörnet"
+text = "Stjärnorna i {corner} hörnet är utdragna ({ecc}, mot {centre} i mitten)."
+
+[rate.f.star_rings_major]
+title = "Mörka ringar runt stjärnor"
+text = "{ring_pct} % av de ljusa stjärnorna har en mörk ring."
+
+[rate.f.star_rings_minor]
+title = "Några stjärnor har mörka ringar"
+text = "{ring_pct} % av de ljusa stjärnorna har en mörk ring."
+
+[rate.f.star_color]
+title = "Färglösa stjärnor"
+text = "Stjärnorna visar lite färgvariation."
+
+[rate.f.star_color_ok]
+title = "Färgrika stjärnor"
+text = "Stjärnorna visar ett naturligt spann av färger."
+
+[rate.f.white_cores]
+title = "Vita stjärnkärnor"
+text = "{white_pct} % av de ljusa stjärnorna har klippta vita kärnor."
+
+[rate.f.magenta_stars]
+title = "Magentafärgade stjärnor"
+text = "{magenta_pct} % av stjärnorna är magentafärgade."
+
+[rate.f.fringe]
+title = "{hue_title} stjärnkanter"
+text = "Stjärnorna är {px} px större i {channel} än i de andra färgerna."
+
+[rate.f.fringe_lateral]
+title = "Färgkanter mot bildkanterna"
+text = "Rött och blått är förskjutna {px} px i ytterfältet."
+
+[rate.f.few_stars]
+title = "För få stjärnor att mäta"
+text = "För få stjärnor hittades för en stjärnbedömning (stjärnlös bild?)."
+
+[rate.f.muted_major]
+title = "Nästan färglös"
+text = "Objektets medianmättnad är {saturation_pct} %."
+
+[rate.f.muted_minor]
+title = "Dämpade färger"
+text = "Objektets medianmättnad är {saturation_pct} %."
+
+[rate.f.oversaturated_major]
+title = "Övermättade färger"
+text = "{sat_high} % av objektet är nära full mättnad."
+
+[rate.f.oversaturated_minor]
+title = "Kraftig mättnad"
+text = "{sat_high} % av objektet är nära full mättnad."
+
+[rate.f.saturation_ok]
+title = "Välavvägd mättnad"
+text = "Färgerna är fylliga utan att bli skrikiga (median {saturation_pct} %)."
+
+[rate.f.channel_clip]
+title = "Klippt färgkanal"
+text = "{channel_clip} % av objektet har en färgkanal klippt."
+
+[rate.f.low_detail]
+title = "Lite fina detaljer"
+text = "Fin struktur sticker knappt upp ur bruset."
+
+[rate.f.detail_ok]
+title = "Bra fina detaljer"
+text = "Fin struktur sticker tydligt upp ur bruset ({detail_ratio}x)."
+
+[rate.f.jpeg_major]
+title = "Kraftig JPEG-komprimering"
+text = "Kvalitet ungefär {jpeg_quality}, med synliga 8x8-block ({blockiness}x)."
+
+[rate.f.jpeg_minor]
+title = "Märkbar JPEG-komprimering"
+text = "Kvalitet ungefär {jpeg_quality} ({blockiness}x blockkanter)."
+
+[rate.f.edges_one]
+title = "Staplingskanter inte beskurna"
+text = "Ojämna eller mörka kanter längs {edges}."
+
+[rate.f.edges_many]
+title = "Staplingskanter inte beskurna"
+text = "Ojämna eller mörka kanter längs {edges}."
+
+[rate.f.clean_edges]
+title = "Rena kanter"
+text = "Inga staplingskanter kvar."
+
+[rate.f.small_image]
+title = "Liten bild"
+text = "Bara {megapixels} megapixlar."
+
+[rate.f.eight_bit]
+title = "8-bitarsfil"
+text = "Bra för att dela; spara en master med 16 eller 32 bitar för utskrift och ny bearbetning."
+
+[rate.f.off_centre]
+title = "Motivet ligger inte i mitten"
+text = "Det mesta av ljuset ligger mot {side}. Medveten placering kan fungera bra; annars kan en beskärning balansera bilden."
+
+[rate.w]
+brightest_towards = ", ljusast mot {side}"
+
+[rate.w.dir]
+right = "höger"
+lower_right = "nedre högra hörnet"
+bottom = "nederkanten"
+lower_left = "nedre vänstra hörnet"
+left = "vänster"
+upper_left = "övre vänstra hörnet"
+top = "överkanten"
+upper_right = "övre högra hörnet"
+
+[rate.w.corner]
+upper_left = "övre vänstra"
+upper_right = "övre högra"
+lower_left = "nedre vänstra"
+lower_right = "nedre högra"
+
+[rate.w.edge]
+top = "överkanten"
+bottom = "nederkanten"
+left = "vänsterkanten"
+right = "högerkanten"
+
+[rate.w.hue]
+red = "röd"
+green = "grön"
+blue = "blå"
+yellow = "gul"
+cyan = "cyan"
+magenta = "magenta"
+neutral = "neutral"
+red_blue = "röd/blå"
+
+[rate.w.hue_title]
+red = "Röd"
+green = "Grön"
+blue = "Blå"
+yellow = "Gul"
+cyan = "Cyan"
+magenta = "Magenta"
+neutral = "Neutral"
+
+[rate.w.channel]
+red = "rött"
+green = "grönt"
+blue = "blått"
+
+[rate.w.shape]
+radial = ", utdragna mot mitten eller utåt (koma)"
+tangential = ", utdragna längs cirklar (astigmatism eller fältkrökning)"
+
+[rate.w.hint]
+default = "Kontrollera avståndet mellan fältutjämnaren eller korrektorn och sensorn (bakfokus)."
+radial = "Radiell utdragning betyder att bakfokusavståndet är fel: justera avståndet till fältutjämnaren eller komakorrektorn i små steg."
+tangential = "Tangentiell utdragning betyder oftast fältkrökning: en fältutjämnare, eller ett annat avstånd, hjälper."
+
+[rate.f.depth]
+at_least = "minst {mag}"
+text = "Stjärnor syns ner till Gaia-magnitud {mag} (hälften av katalogens stjärnor med den ljusstyrkan hittas). {verdict}"
+good_title = "Djup bild"
+info_title = "Måttligt djup"
+minor_title = "Grund bild"
+good_text = "Det är djupt för det här synfältet."
+info_text = "Typiskt djup för några timmars integration."
+minor_text = "Ganska grunt: mer integrationstid skulle visa mer."
+
+[rate.f.color_calibration_ok]
+title = "Stjärnfärgerna följer sina verkliga färger"
+text = "Bildens stjärnfärger följer Gaias färger väl (r = {r}); en solliknande stjärna ser {hue} ut."
+neutral = "neutral"
+warm = "lite varm (röd)"
+cool = "lite kall (blå)"
+
+[rate.f.color_calibration]
+partly_title = "Stjärnfärgerna delvis fel"
+partly_text = "Stjärnfärgerna följer Gaia bara löst (r = {r})."
+partly_tip = "Färgkalibreringen kan förbättras."
+off_title = "Stjärnfärgerna stämmer inte med verkligheten"
+off_text = "Stjärnfärgerna följer inte Gaia (r = {r}). Med smalbands- eller dual-band-data är det väntat."
+off_tip = "Med bredbandsdata behöver färgkalibreringen ses över."
+
+[rate.f.framing]
+title = "Kompositionen av {name}"
+larger = "Objektet är större än bilden; du visar en del av det."
+small = "Objektet är litet i bilden; en beskärning eller längre brännvidd skulle visa det bättre."
+fills = "Objektet fyller ungefär {pct} % av bildens bredd."
+
+[rate.report]
+chosen = "valt"
+starless = "stjärnlös"
+score_line = "**{verdict}** · poäng {score}/100 (bedömd på nivån {skill}) — {headline}"
+picture = "Bild: {context}"
+category = "Kategori"
+score = "Poäng"
+verdict = "Omdöme"
+improve = "Så förbättrar du bilden"
+judged = "bedömd på nivån {skill}"
+limit = "Gränsmagnitud (50 % av Gaias stjärnor hittade): G {mag}"
+survey = "{name}-vy av samma fält:"
+star_data = "Stjärndata"
+measurements = "Mätningar"
+table_picture = "Bild"
+masks = "Masker: {names} (se Markdown-rapporten)"
+wf_title = "Arbetsflöde för bildbehandling ({tool})"
+wf_yours = "Din bild"
+wf_note = "För det här objektet"
+wf_linear = "linjär"
+
+[flag]
+fwhm = "stjärnor {value} px mot sessionens median {median} px (seeing, fokusdrift eller vind)"
+ecc = "utdragna stjärnor (excentricitet {value}); följning, guidning eller vind"
+stars = "{value} stjärnor mot medianen {median} (moln, dis eller dagg)"
+sky = "himmel {value} ADU mot medianen {median} (måne, gryning, ljuskälla eller moln upplysta underifrån)"
+
+[cal]
+vs_lights = "{what} {value} mot ljusbildernas {lights}"
+vs_flats = "{what} {value} mot flatsens {flats}"
+
+[cal.word]
+exposure = "exponering"
+gain = "gain"
+offset = "offset"
+binning = "binning"
+temperature = "temperatur"
+red = "rött"
+green = "grönt"
+blue = "blått"
+
+[cal.kind]
+bias = "biasbilder"
+darks = "darks"
+flats = "flats"
+darkflats = "flat darks"
+
+[cal.kind_short]
+bias = "bias"
+darks = "darks"
+flats = "flats"
+darkflats = "flat darks"
+
+[cal.flag]
+setting = "{what} {value} skiljer sig från resten ({common})"
+size = "storleken {w}×{h} skiljer sig från resten"
+flat_level = "ljusstyrka {value} ADU mot {median} för de andra flatsen (panelen eller himlen ändrades)"
+clipped = "{pct} % av pixlarna klippta (överexponerad)"
+level_high = "nivå {value} ADU mot {median} (ljusläckage, eller ingen dark?)"
+level_low = "nivå {value} ADU mot {median} (annan offset-inställning?)"
+noise = "brus {value} ADU mot {median} för resten"
+
+[cal.note]
+labels = "{n} {kind} är märkta '{said}' i sina headers; mappen och datan säger {kind}, så AdvAstro använder dem som {kind}."
+darks_mismatch = "Dina darks stämmer inte med ljusbilderna: {problems}."
+darks_match = "Dina darks stämmer med ljusbilderna ({parts})."
+darks_old = "Dina darks är {days} dagar äldre än ljusbilderna. Ett dark-bibliotek fungerar, men förnya det ungefär en gång om året: sensorer ändras långsamt."
+flat_dim = "Dina flats är mörka ({pct} % av full skala). Sikta på 30–60 % så att deras brus inte läggs på ljusbilderna."
+flat_bright = "Dina flats är mycket ljusa ({pct} % av full skala) och kan vara olinjära. Sikta på 30–60 %."
+flat_low = "Dina flats når {pct} % av full skala: användbart, men 30–60 % ger renare masterbilder."
+flat_good = "Ljusstyrkan i dina flats är bra ({pct} % av full skala)."
+flat_channels = "Dina flats är mycket mörkare i {lo} ({lo_pct} %) än i {hi} ({hi_pct} %). Det är normalt för många ljuskällor, men håll den mörkaste kanalen över ungefär 10 %."
+vignetting = "Vinjettering: hörnen får ungefär {pct} % mindre ljus än mitten; dina flats rättar det."
+dust = "Ungefär {n} dammskuggor syns i dina flats (djupast {depth} %). De rättas så länge inget i den optiska kedjan rörts mellan ljusbilder och flats."
+flats_other_night = "Dina flats är från en annan natt ({days} dagar emellan). De stämmer bara om kameran inte vridits, fokuserats om eller rengjorts däremellan."
+flats_same_night = "Dina flats är från samma natt som ljusbilderna."
+flat_binning = "Dina flats har binning {flats}x men ljusbilderna {lights}x."
+flatdarks_mismatch = "Dina flat darks stämmer inte med dina flats: {problems}."
+flatdarks_match = "Dina flat darks stämmer med dina flats{parts}."
+flats_uncalibrated = "Varken flat darks eller bias hittades, så dina flats kan inte kalibreras ordentligt."
+bias_long = "Biasbilderna är exponeringar på {exp} s, så de fungerar som korta darks. Det går bra med flats av samma exponering."
+bias_setting = "Biasbildernas {what} {value} skiljer sig från ljusbildernas ({lights})."
+leak = "Nivån i dina {kind} varierar från {lo} till {hi} ADU{rising}. Det tyder på att ljus når sensorn (ett ljusläckage, eller darks tagna i dagsljus). Sätt på locket, täck kameran och lämna bort de ljusaste bilderna."
+leak_rising = ", stigande genom serien"
+glow = "Amp glow: {side} är {adu} ADU ljusare än mitten. Matchande darks tar bort den; undvik dark-skalning eller optimering."
+banding = "Rad- eller kolumnränder på {adu} ADU i dina {kind}; fler bilder ger en jämnare master."
+hot = "{n} heta pixlar ({pct} % av sensorn) vid den här exponeringen och temperaturen."
+few = "Bara {n} {kind}: {ideal} eller fler ger en master med mindre brus."
+
+[adv.md]
+title = "Arbetsflöde för {target} ({tool})"
+insights = "Bra att veta först"
+note = "Obs"
+
+[adv.family]
+
+galaxy = "galaxen"
+emission = "nebulosan"
+reflection = "reflektionsnebulosan"
+planetary = "den planetariska nebulosan"
+cluster = "stjärnhopen"
+globular = "den klotformiga stjärnhopen"
+unknown = "objektet"
+
+[adv.f]
+same_temp = "samma sensortemperatur"
+bortle = ", Bortle {n}-himmel"
+and = "och"
+the_target = "objektet"
+strong = " (kraftig)"
+cosmetic_extra = " Utan darks fångar en något lägre gräns för heta pixlar fler."
+drizzle_2x = "Stjärnorna är bara {fwhm} px breda (undersamplade) och delbilderna är dithrade ({dither} px mellan delbilder), så 2x drizzle med {kept} delbilder ger verklig upplösning."
+drizzle_1x = "Dithrad färgdata kan staplas med Bayer drizzle i 1x: varje färg kommer från riktiga pixlar i stället för interpolering, vilket ger renare färger och finare stjärnor."
+drift = " Fältet drev {px} px under sessionen; registreringen hanterar det, men kontrollera polinställningen."
+grad_level = "Bakgrunden varierar ungefär {pct} % över bilden"
+grad_level_unknown = "All himmel har någon gradient"
+sho_note = " En äkta SHO-palett kräver SII-data; ett SHO-utseende från bara Hα/OIII är en approximation."
+milky_way_note = " — i det här Vintergatsfältet håller en sänkning av stjärnornas styrka med 20–40 % nebulosan i förgrunden"
+
+[adv.f.master]
+darks = "en masterdark"
+flats = "en masterflat"
+bias = "en masterbias"
+darkflats = "en master-flat dark"
+
+[adv.f.flat_cal]
+darkflats = "dina flat darks"
+bias = "biasbilderna"
+none = "inget (inga hittades)"
+
+[adv.f.dark_opt]
+match = "av (dina darks stämmer med ljusbilderna)"
+glow = "av (amp glow)"
+on = "på"
+
+[adv.f.grad_how]
+fills = "{target} fyller bilden, så det finns lite tom himmel: placera bakgrundspunkter bara på riktigt mörka partier, eller använd en AI-modell som GraXpert, och undvik automatiska polynomanpassningar som kan ta bort svag nebulosa."
+galaxy = "Det finns gott om tom himmel runt galaxen, så en automatisk anpassning (låg grad) eller några manuella punkter en bit från galaxens svaga halo fungerar bra."
+other = "Placera punkter på tom himmel över hela bilden, undvik stjärnor och nebulosa."
+
+[adv.f.solve]
+solved = "Färgkalibreringen behöver det. Din session är redan löst: mitt RA {ra}, Dec {dec}, {scale}″/px. Ange dem så löses den på sekunder."
+pointing = "Färgkalibreringen behöver det. Börja från teleskopets riktning: RA {ra}, Dec {dec}, ungefär {scale}″/px."
+none = "Färgkalibreringen behöver en astrometrisk lösning. Ange bildskalan och objektets namn eller koordinater för att hjälpa lösaren."
+
+[adv.f.color]
+dual = "Använd smalbandsläget med ditt filters passband för Hα (656 nm) och OIII (500 nm), så att färgerna stämmer med vad filtret verkligen släpper igenom."
+galaxy = "Mäter stjärnornas färger mot en fotometrisk katalog. Använd en genomsnittlig spiralgalax som vitreferens för naturliga galaxfärger."
+other = "Mäter färgerna på stjärnorna i fältet mot en fotometrisk katalog och rättar kamerans färgåtergivning."
+
+[adv.f.deconv]
+galaxy = ": spiralarmar och stoftband vinner mest"
+planetary = ": den lilla skalstrukturen vinner mest"
+emission = " i filament och mörka band; håll skärpningen av nebulosan måttlig"
+
+[adv.f.stretch]
+galaxy = "Använd en generaliserad hyperbolisk sträckning med skydd för högdagrar, så att kärnan inte bränns ut medan de svaga yttre armarna kommer fram."
+cluster = "Använd en mild arcsinh-sträckning: den ljusar upp svaga stjärnor utan att bleka stjärnfärgerna."
+globular = "Använd en mild arcsinh-sträckning och skydda den täta kärnan från att mättas."
+other = "Använd en generaliserad hyperbolisk sträckning med symmetripunkten vid bakgrundens topp: svag nebulosa kommer fram utan att himlen blir uppblåst."
+
+[adv.f.contrast]
+galaxy = "Kontrast i mellanskala på spiralarmarna tar fram stoftband och HII-områden; håll den subtil så att halon förblir jämn."
+planetary = "Kontrast i liten skala tar fram skalstrukturen; skydda bakgrunden."
+other = "Lokal histogramutjämning i stor skala tar fram filament och djup i nebulosan; använd den på den stjärnlösa bilden."
+
+[adv.f.saturation]
+galaxy = "Höj mättnaden försiktigt på galaxen (blå armar, rosa HII-områden) och håll bakgrunden neutral."
+other = "Höj mättnaden på nebulosan genom en mask och håll bakgrunden neutral."
+
+[sky.src]
+astap_file = "ASTAP-lösning i filen"
+header = "lösning i filens header"
+pointing_header = "teleskopets riktning i filens header"
+pointing = "teleskopets riktning"
+name = "namnet ”{name}”"
+
+[sky.err]
+no_astap = "ASTAP hittades inte"
+no_db = "Ingen stjärndatabas för ASTAP hittades"
+timeout = "ASTAP blev inte klar inom {s} s"
+start = "Kunde inte starta ASTAP: {error}"
+no_result = "ASTAP skrev inget resultat"
+no_match = "ingen matchning mot stjärndatabasen"
+failed = "Plattlösningen misslyckades: {reason}"
+unreadable = "ASTAP:s resultat kunde inte läsas"
+
+[cli.target]
+unknown = "Objekt: okänt (ingen lösning, riktning eller namn hittades)."
+line = "Objekt: {label} ({ids}) — {type}{where}{size}."
+in = " i {const}"
+by = "Identifierat genom: {level} ({source})."
+field = "Fält: {w}′ × {h}′ vid {scale}″/px, centrum RA {ra}°, Dec {dec}°."
+others = "Också i fältet: {names}."
+
+[read.err]
+type = "Filtypen stöds inte: {ext} ({name})"
+no_image = "Ingen bilddata i {name}"
+package = "{codec}-komprimerad XISF kräver paketet '{package}'"
+compression = "XISF-komprimeringen stöds inte: {codec}"
+truncated = "XISF-filen är avkortad"
+block = "Inbäddat XISF-datablock saknas"
+location = "XISF-dataplatsen stöds inte: {kind}"
+not_xisf = "{name} är inte en XISF-fil"
+sample = "XISF-samplingsformatet stöds inte: {fmt}"
+samples = "{name}: väntade {expected} värden, hittade {found}"
+
+[rate.a]
+galaxy = "en galax"
+emission = "en emissionsnebulosa"
+reflection = "en reflektionsnebulosa"
+planetary = "en planetarisk nebulosa"
+dark = "en mörk nebulosa"
+cluster = "en öppen stjärnhop"
+globular = "en klotformig stjärnhop"
+milkyway = "ett Vintergatsfält"
+unknown = "ditt objekt"
+
+[cli.col]
+file = "Fil"
+ecc = "Exc"
+stars = "Stj."
+bkg = "Bkg ADU"
+noise = "Brus"

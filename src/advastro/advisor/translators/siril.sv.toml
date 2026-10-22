@@ -1,0 +1,88 @@
+# Svensk text för siril.toml: inställningar och anteckningar. Varianterna matchas i samma
+# ordning som i originalet. Menyvägarna följer Sirils engelska gränssnitt (Siril 1.4).
+
+[[select_subs]]
+settings = ["Avmarkera de bortvalda delbilderna, eller kopiera bara de behållna filerna ({kept}) till ljusbildsmappen innan du kör skriptet"]
+
+[[reference_frame]]
+settings = ["Sätt {best_sub} som referens"]
+
+[[calibrate]]
+settings = ["Mappar: lights, darks, flats, biases ({cal_found})", "Flats: kalibreras med {flat_cal}", "Dark optimization: {dark_optimize}"]
+
+[[cosmetic]]
+settings = ["Använd masterdarken", "Cold / hot sigma: {cold_sigma:.1f} / {hot_sigma:.1f}"]
+[[cosmetic]]
+settings = ["Kommando: find_cosme {cold_sigma:.1f} {hot_sigma:.1f}"]
+
+[[debayer]]
+settings = ["Mönster: från headern ({bayer})", "Interpolation: RCD"]
+
+[[register]]
+settings = ["Metod: Global Star Alignment (deep-sky)", "Transformation: Homography"]
+
+[[local_normalization]]
+settings = ["Kommando: seqsubsky <sequence> 1", "Stapla sedan med normaliseringen additive + scaling"]
+note = "Siril har ingen lokal normalisering; att först ta bort varje delbilds gradient ger nästan samma resultat."
+
+[[integrate]]
+settings = ["Metod: Average with rejection", "Rejection: {rejection}", "Sigma low / high: {sigma_low:.1f} / {sigma_high:.1f}", "Normalization: Additive with scaling", "Weighting: efter antal stjärnor (eller wFWHM)"]
+
+[[drizzle]]
+settings = ["Slå på drizzle (fungerar på CFA-data som Bayer drizzle)", "Scaling: {drizzle_scale}x", "Pixel fraction: {drop_shrink:.1f}"]
+
+[[crop]]
+settings = ["Beskär bort staplingskanterna"]
+
+[[gradient]]
+settings = ["Operation: Background Extraction", "Method: AI"]
+[[gradient]]
+settings = ["Interpolation: RBF (eller polynom av grad 1–2)", "Generera punkter och ta sedan bort de som ligger på objektet", "Correction: Subtraction"]
+
+[[solve_image]]
+settings = ["Target: sök på namn, eller ange koordinaterna från rådtexten", "Pixelstorlek och brännvidd: från bildens header"]
+
+[[color_calibration]]
+settings = ["Narrowband mode: på", "Röd: Hα 656,3 nm; grön/blå: OIII 500,7 nm, med ditt filters bandbredder"]
+[[color_calibration]]
+settings = ["Sensor: din kamera (listan över OSC-sensorer)", "Filters: dina OSC/RGB-filter", "White reference: Average Spiral Galaxy"]
+
+[[deconvolution]]
+settings = ["PSF: från stjärnor (Dynamic PSF)", "Algoritm: Richardson-Lucy, 10–20 iterationer", "Regularization: Total Variation"]
+
+[[noise_linear]]
+settings = ["Algoritm: NL-Bayes", "Modulation: {nr_strength:.2f}"]
+
+[[star_separation]]
+settings = ["Generate star mask: på", "Pre-stretch: på för linjär data"]
+
+[[narrowband_extract]]
+settings = ["Kommando: extract_HaOIII på de kalibrerade CFA-delbilderna", "Stapla Hα och OIII var för sig och kombinera sedan: R = Hα, G = OIII, B = OIII"]
+note = "Extraheringen fungerar på data som inte debayrats (CFA), så gör den direkt efter kalibreringen."
+
+[[stretch]]
+settings = ["Stretch factor: 10–40", "Black point offset: strax under bakgrunden"]
+[[stretch]]
+settings = ["Symmetry point: bakgrundens topp", "Highlight protection: 0,85–0,95", "Flera små sträckningar"]
+
+[[stretch_stars]]
+settings = ["Använd på stjärnbilden", "Stretch factor: 20–60"]
+
+[[hdr]]
+settings = ["Höj highlight protection för att behålla kärnans struktur"]
+note = "Siril har inget direkt HDR-verktyg i flera skalor; skydda högdagrarna under sträckningen i stället."
+
+[[local_contrast]]
+settings = ["Tiles size: 8–16", "Clip limit: 1,5–2,0", "Använd på den stjärnlösa bilden"]
+
+[[saturation]]
+settings = ["Amount: 0,2–0,5", "Background factor: 1,5 för att skydda bakgrunden"]
+
+[[star_recombine]]
+settings = ["Stjärnlös bild och stjärnbild", "Sänk stjärnornas sträckning för att dämpa dem"]
+
+[[cluster_stars]]
+settings = ["Ingen stjärnborttagning", "Försiktig mättnad"]
+
+[[export]]
+settings = ["Master: FITS 32 bitar", "För att dela: TIFF 16 bitar eller JPEG"]

@@ -72,7 +72,7 @@ if sys.platform == "darwin":
         icon=icon,
         bundle_identifier="se.miklosoft.advastro",
         info_plist={
-            "CFBundleShortVersionString": "0.1.0",
+            "CFBundleShortVersionString": "1.0.0",
             "NSHighResolutionCapable": True,
             "NSRequiresAquaSystemAppearance": False,
             "LSMinimumSystemVersion": "12.0",

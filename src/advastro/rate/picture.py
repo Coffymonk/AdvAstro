@@ -16,6 +16,8 @@ from pathlib import Path
 
 import numpy as np
 
+from advastro.i18n import tr
+
 RASTER = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".jfif"}
 TIFF = {".tif", ".tiff"}
 ASTRO = {".fits", ".fit", ".fts", ".xisf"}
@@ -93,7 +95,7 @@ def _planes(data: np.ndarray, channels_last: bool) -> np.ndarray:
     if data.shape[0] == 2:          # grey + alpha
         data = data[:1]
     if data.shape[0] not in (1, 3):
-        raise PictureError(f"Unsupported channel layout {data.shape}")
+        raise PictureError(tr("rate.err.layout", shape=data.shape))
     return data
 
 
@@ -210,8 +212,7 @@ def _load_astro(path: Path) -> Picture:
     elif bitpix in (-32, -64):
         depth = f"{abs(bitpix)}-bit float"
     if data.ndim == 2 and frame.meta.bayer_pattern:
-        raise PictureError("This file is undebayered camera data, not a finished picture. "
-                           "Use the main window to analyze subs.")
+        raise PictureError(tr("rate.err.cfa"))
     if levels:
         unit = np.clip(data / float(levels - 1), 0, 1).astype(np.float32)
     else:
@@ -234,7 +235,7 @@ def _finish(path: Path, planes: np.ndarray, fmt: str, depth: str, levels: int | 
     rgb = np.repeat(planes[:1], 3, axis=0) if planes.shape[0] == 1 else planes
     rgb = np.ascontiguousarray(rgb, dtype=np.float32)
     if min(rgb.shape[1:]) < 64:
-        raise PictureError("The picture is too small to analyze (under 64 pixels).")
+        raise PictureError(tr("rate.err.small"))
     eff = _effective_levels(rgb, levels)
     if eff and levels and eff < levels:
         depth = f"{depth} (holding 8-bit data)" if eff <= 256 else depth
@@ -247,7 +248,7 @@ def load_picture(path: str | Path) -> Picture:
     path = Path(path)
     ext = path.suffix.lower()
     if ext not in SUPPORTED:
-        raise PictureError(f"Unsupported picture type: {ext or path.name}")
+        raise PictureError(tr("rate.err.type", type=ext or path.name))
     if ext in ASTRO:
         return _load_astro(path)
     if ext in TIFF:

@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  Version <b>0.1.0.dev0</b> (development preview) ·
+  Version <b>1.0.0</b> ·
   <a href="https://github.com/Coffymonk/AdvAstro/releases">Download</a> ·
   <a href="https://github.com/Coffymonk/AdvAstro/releases">User manual (PDF, English and Swedish)</a>
 </p>
@@ -321,7 +321,7 @@ into `dist/`. On Windows it also makes a **Setup.exe installer** (with the free
 [Inno Setup](https://jrsoftware.org/isinfo.php); the script offers to install it), and on
 macOS a **drag-to-Applications `.dmg`** and an **installer `.pkg`** (with tools that come
 with macOS).
-Pushing a version tag such as `v0.1.0` makes GitHub Actions build all three and
+Pushing a version tag such as `v1.0.0` makes GitHub Actions build all three and
 publish a release with the source code.
 
 The builds are not code-signed yet. On Windows, click *More info → Run anyway* in the

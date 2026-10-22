@@ -107,7 +107,7 @@ siril = [
 
 [[stage]]
 id = "noise"
-title = "Reduce noise (linear)"
+title = "Reduce noise"
 kinds = "all"
 linear = true
 fixes = ["noise", "mottle", "color_noise", "plastic"]

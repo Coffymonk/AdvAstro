@@ -113,8 +113,9 @@ def _fmt(value, spec: str, unit: str = "") -> str:
 def _render_table(summary: SessionSummary, scale_note: str) -> str:
     flagged = summary.flagged_files()
     out = io.StringIO()
-    header = f"{'':2}{'File':<34}{'FWHM px':>9}{'FWHM ″':>8}{'Ecc':>6}{'Stars':>7}" \
-             f"{'Bkg ADU':>10}{'Noise':>8}{'SNR':>7}"
+    col = {k: tr(f"cli.col.{k}") for k in ("file", "ecc", "stars", "bkg", "noise")}
+    header = f"{'':2}{col['file']:<34}{'FWHM px':>9}{'FWHM ″':>8}{col['ecc']:>6}{col['stars']:>7}" \
+             f"{col['bkg']:>10}{col['noise']:>8}{'SNR':>7}"
     out.write(header + "\n" + "-" * len(header) + "\n")
     for s in summary.subs:
         mark = "! " if s.file in flagged else "  "
@@ -282,20 +283,20 @@ def _render_calibration(cal) -> str:
 def describe_target(report) -> str:
     """One paragraph about what was imaged, for the command line."""
     if report.target is None:
-        return "Target: unknown (no solution, pointing or name found)."
+        return tr("cli.target.unknown")
     t = report.target
     size = f", {t.major_arcmin:g}′" if t.major_arcmin else ""
-    where = f" in {report.constellation}" if report.constellation else ""
-    lines = [f"Target: {t.label} ({' · '.join(t.designations[:4])}) — "
-             f"{tr('sky.type.' + t.type_key)}{where}{size}.",
-             f"Identified by: {tr('gui.target.level.' + report.confidence).lower()} "
-             f"({report.source})."]
+    where = tr("cli.target.in", const=report.constellation) if report.constellation else ""
+    lines = [tr("cli.target.line", label=t.label, ids=" · ".join(t.designations[:4]),
+                type=tr("sky.type." + t.type_key), where=where, size=size),
+             tr("cli.target.by", level=tr("gui.target.level." + report.confidence).lower(),
+                source=report.source)]
     if report.sky:
         sky = report.sky
-        lines.append(f"Field: {sky.width_deg * 60:.0f}′ × {sky.height_deg * 60:.0f}′ at "
-                     f"{sky.scale_arcsec:.2f}″/px, centre RA {sky.ra:.4f}°, Dec {sky.dec:.4f}°.")
+        lines.append(tr("cli.target.field", w=f"{sky.width_deg * 60:.0f}", h=f"{sky.height_deg * 60:.0f}",
+                        scale=f"{sky.scale_arcsec:.2f}", ra=f"{sky.ra:.4f}", dec=f"{sky.dec:.4f}"))
     if report.others:
-        lines.append("Also in the field: " + ", ".join(o.label for o in report.others[:6]) + ".")
+        lines.append(tr("cli.target.others", names=", ".join(o.label for o in report.others[:6])))
     return "\n".join(lines)
 
 
@@ -398,22 +399,23 @@ def _render_rating(r, tool: str | None) -> str:
     p = r.picture
     out = io.StringIO()
     out.write(f"{p.path.name}  ({p.width} x {p.height}, {p.format.upper()} {p.bit_depth})\n\n")
-    out.write(f"  {VERDICT_NAMES[r.verdict].upper()}  {r.score}/100  (judged as {r.skill})\n")
-    out.write(f"  Picture: {context_text(r)}\n")
+    out.write(f"  {VERDICT_NAMES[r.verdict].upper()}  {r.score}/100  "
+              f"({tr('rate.report.judged', skill=tr(f'gui.settings.skills.{r.skill}').lower())})\n")
+    out.write(f"  {tr('rate.report.picture', context=context_text(r))}\n")
     out.write(f"  {r.headline}\n\n")
     for k, c in r.categories.items():
         bar = "#" * (c.score // 5) + "." * (20 - c.score // 5)
         out.write(f"  {CATEGORY_NAMES[k]:<13} {bar} {c.score:>3}  {WORD[c.verdict]}\n")
     if r.issues:
-        out.write("\nFindings\n")
+        out.write(f"\n{tr('rate.tab.findings')}\n")
         for f in r.issues:
             out.write(f"  [{SEVERITY[f.severity]:<8}] {f.title}: {f.text}\n")
     if r.strengths:
-        out.write("\nWhat works\n")
+        out.write(f"\n{tr('rate.what_works')}\n")
         for f in r.strengths:
             out.write(f"  + {f.title}\n")
     if r.plan:
-        out.write("\nHow to improve this image\n")
+        out.write(f"\n{tr('rate.report.improve')}\n")
         for i, s in enumerate(r.plan, 1):
             out.write(f"\n  {i}. {s.finding.title}\n")
             if s.why:
@@ -426,13 +428,13 @@ def _render_rating(r, tool: str | None) -> str:
                 for x in steps:
                     out.write(f"       - {x}\n")
             if s.masks:
-                out.write(f"     Masks: {', '.join(s.masks)} (see the Markdown report)\n")
+                out.write(f"     {tr('rate.report.masks', names=', '.join(s.masks))}\n")
     if r.capture:
-        out.write("\nNext time at the telescope\n")
+        out.write(f"\n{tr('rate.capture')}\n")
         for c in r.capture:
             out.write(f"  - {c}\n")
     if r.sky is not None and r.sky.depth and r.sky.depth.limit_mag:
-        out.write(f"\nLimiting magnitude: G {r.sky.depth.limit_mag:.1f}\n")
+        out.write("\n" + tr("rate.report.limit", mag=f"{r.sky.depth.limit_mag:.1f}") + "\n")
     return out.getvalue()
 
 

@@ -16,6 +16,7 @@ from pathlib import Path
 import numpy as np
 
 from advastro.engine.metrics import MeasureOptions, SubMetrics, measure_frame
+from advastro.i18n import tr
 from advastro.readers import read_frame
 
 MAD_TO_SIGMA = 1.4826
@@ -188,15 +189,13 @@ def summarize(
             if s.fwhm_px is not None and s.fwhm_px > limit:
                 summary.flags.append(SubFlag(
                     s.file, "fwhm_px", s.fwhm_px, limit,
-                    f"stars {s.fwhm_px:.2f} px vs session median {med:.2f} px "
-                    "(seeing, focus drift or wind)"))
+                    tr("flag.fwhm", value=f"{s.fwhm_px:.2f}", median=f"{med:.2f}")))
 
     for s in subs:
         if s.eccentricity is not None and s.eccentricity > t.eccentricity_max:
             summary.flags.append(SubFlag(
                 s.file, "eccentricity", s.eccentricity, t.eccentricity_max,
-                f"elongated stars (eccentricity {s.eccentricity:.2f}); "
-                "tracking, guiding or wind"))
+                tr("flag.ecc", value=f"{s.eccentricity:.2f}")))
 
     stars = vals("star_count")
     if len(stars) >= 3:
@@ -206,7 +205,7 @@ def summarize(
             if s.star_count < limit:
                 summary.flags.append(SubFlag(
                     s.file, "star_count", s.star_count, limit,
-                    f"{s.star_count} stars vs median {med:.0f} (clouds, haze or dew)"))
+                    tr("flag.stars", value=s.star_count, median=f"{med:.0f}")))
 
     bg = vals("background_adu")
     if len(bg) >= 3:
@@ -216,8 +215,7 @@ def summarize(
             if s.background_adu > limit:
                 summary.flags.append(SubFlag(
                     s.file, "background_adu", s.background_adu, limit,
-                    f"sky {s.background_adu:.0f} ADU vs median {med:.0f} "
-                    "(moon, dawn, light source or clouds lit from below)"))
+                    tr("flag.sky", value=f"{s.background_adu:.0f}", median=f"{med:.0f}")))
     return summary
 
 
