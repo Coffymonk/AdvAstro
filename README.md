@@ -151,7 +151,7 @@ What it checks:
 | Detail | Fine structure above the noise, JPEG quality and block artefacts |
 | Presentation | Uncropped stacking edges, size, subject placement, framing of the identified target |
 
-Findings and advice text are in English for now; the window itself follows your language.
+All texts, findings and advice included, follow your language (English or Swedish).
 The rules live in `src/advastro/rate/tips.toml` and `judge.py`.
 
 ## What it measures
@@ -347,8 +347,12 @@ Next:
 
 ## Translations
 
-All text lives in `src/advastro/i18n/locales/<language>.toml`. Missing keys fall back to
-English, so partial translations are welcome.
+Interface text lives in `src/advastro/i18n/locales/<language>.toml`. The longer advice
+(workflow steps, tool settings, Rate my pic tips, mask recipes and target workflows) lives
+in data files next to the code, with one overlay per language, for example
+`rate/tips.sv.toml` beside `rate/tips.toml`. An overlay holds only translated text; anything
+missing falls back to English, so partial translations are welcome. `tests/test_i18n.py`
+checks that keys and placeholders match.
 
 ## Contributing
 

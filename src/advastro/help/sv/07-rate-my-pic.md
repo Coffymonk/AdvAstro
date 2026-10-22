@@ -224,7 +224,7 @@ och kartbilden), **Markdown** (redo att klistra in i ett foruminlägg) eller **J
   Mycket stora bilder (över ungefär 6200 pixlar) mäts i halv storlek.
 - AdvAstro är strikt med tekniska fel, som går att mäta, och mild med smak: "kraftig
   mättnad" är en anmärkning, inte en regel.
-- Texterna för fynd och råd är än så länge på engelska; fönstret följer ditt språk.
+- Alla texter, även fynd, tips och arbetsflöden, följer ditt språk (engelska eller svenska).
 
 <!-- id: rate.reference -->
 ## Fyndreferens

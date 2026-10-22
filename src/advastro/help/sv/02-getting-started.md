@@ -9,7 +9,8 @@ GitHubs release-sida:
 
 - **Windows 10/11**: kör `AdvancedAstrophotoAnalyzer-…-windows-x64-setup.exe`. Det
   installerar programmet under *Program Files* (eller bara för dig, om du väljer det),
-  lägger det i Start-menyn, kan skapa en genväg på skrivbordet och kan lägga
+  lägger det i Start-menyn, skapar en genväg på skrivbordet (bocka ur om du inte vill ha
+  den) och kan lägga
   kommandoradsverktyget `advastro` i PATH. Avinstallera under *Inställningar › Appar*.
 - **macOS (Apple Silicon)**: öppna `AdvancedAstrophotoAnalyzer-…-macos-arm64.dmg` och dra
   **Advanced Astrophoto Analyzer** till mappen *Program*. Vill du hellre ha en

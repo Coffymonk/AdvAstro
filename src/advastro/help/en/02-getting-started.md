@@ -9,7 +9,7 @@ releases page:
 
 - **Windows 10/11**: run `AdvancedAstrophotoAnalyzer-…-windows-x64-setup.exe`. It installs
   the app in *Program Files* (or just for you, if you choose so), adds it to the Start menu,
-  can make a desktop shortcut and can put the `advastro` command-line tool on your PATH.
+  makes a desktop shortcut (untick it if you don't want one) and can put the `advastro` command-line tool on your PATH.
   Remove it again under *Settings › Apps*.
 - **macOS (Apple Silicon)**: open `AdvancedAstrophotoAnalyzer-…-macos-arm64.dmg` and drag
   **Advanced Astrophoto Analyzer** onto the *Applications* folder. Prefer an installer

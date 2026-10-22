@@ -219,7 +219,7 @@ picture and the survey image), **Markdown** (ready to paste in a forum post) or 
   100 %. Very large pictures (over about 6200 pixels) are measured at half size.
 - AdvAstro is strict on technical faults, which can be measured, and gentle on taste:
   "strong saturation" is a remark, not a rule.
-- Finding and advice texts are in English for now; the window follows your language.
+- All texts, including findings, tips and workflows, follow your language (English or Swedish).
 
 <!-- id: rate.reference -->
 ## Finding reference
