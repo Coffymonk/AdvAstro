@@ -83,7 +83,7 @@ def test_overlay_matches_its_base(overlay: Path):
             else:
                 if len(o) != len(b):
                     problems.append(f"{where}: {len(o)} variants, base has {len(b)}")
-                for i, (bx, ox) in enumerate(zip(b, o)):
+                for i, (bx, ox) in enumerate(zip(b, o, strict=False)):
                     check(bx, ox, f"{where}[{i}]")
         else:
             if isinstance(b, list) and isinstance(o, list) and len(b) != len(o):

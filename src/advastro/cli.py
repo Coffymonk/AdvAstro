@@ -293,7 +293,8 @@ def describe_target(report) -> str:
                 source=report.source)]
     if report.sky:
         sky = report.sky
-        lines.append(tr("cli.target.field", w=f"{sky.width_deg * 60:.0f}", h=f"{sky.height_deg * 60:.0f}",
+        lines.append(tr("cli.target.field",
+                        w=f"{sky.width_deg * 60:.0f}", h=f"{sky.height_deg * 60:.0f}",
                         scale=f"{sky.scale_arcsec:.2f}", ra=f"{sky.ra:.4f}", dec=f"{sky.dec:.4f}"))
     if report.others:
         lines.append(tr("cli.target.others", names=", ".join(o.label for o in report.others[:6])))

@@ -100,7 +100,8 @@ def identify(sky: SkyField | None, name_hints: list[str] | None = None,
     if sky is None:
         if hinted:
             const, b = _sky_facts(hinted.ra, hinted.dec)
-            return TargetReport(hinted, "name", tr("sky.src.name", name=hint_source), None, [], const, b)
+            return TargetReport(hinted, "name", tr("sky.src.name", name=hint_source),
+                                None, [], const, b)
         return TargetReport(None, "none", "no position or name")
 
     margin = 0.0 if sky.level == "solved" else 0.15 * min(sky.width_deg, sky.height_deg)

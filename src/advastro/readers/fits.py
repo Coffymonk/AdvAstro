@@ -12,9 +12,8 @@ from pathlib import Path
 import numpy as np
 from astropy.io import fits as afits
 
-from advastro.i18n import tr
-
 from advastro.frame import Frame, FrameMeta
+from advastro.i18n import tr
 
 # Keyword aliases in priority order. Different capture programs use different names.
 _KEYS = {
