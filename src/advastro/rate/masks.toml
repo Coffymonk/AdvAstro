@@ -1,0 +1,89 @@
+# Step-by-step mask recipes for Rate my pic's Improve tab.
+#
+# A finding's tips (tips.toml) name the masks its steps use: masks = ["inverted_luminance"].
+# Each recipe has:
+#   title       short name
+#   what        what the mask does, in one or two sentences
+#   pixinsight  steps
+#   siril       steps (Siril applies tools to the whole image, so the recipes blend a
+#               processed copy with the original in PixelMath instead)
+
+[luminance]
+title = "Luminance mask (effect on the bright parts)"
+what = "White where the image is bright, black where it is dark. A process applied through it acts on the object and leaves the sky alone: use it for sharpening, saturation and contrast."
+pixinsight = [
+  "Duplicate the image: drag its tab onto an empty part of the workspace. Work on the copy, never the original.",
+  "If the image is still linear: open ScreenTransferFunction, click Auto Stretch, then drag the STF triangle onto the bottom bar of HistogramTransformation and drag HistogramTransformation's triangle onto the copy. The copy is now stretched for real.",
+  "Image › Extract › Lightness (CIE L*). This makes a greyscale image; that is the mask. Close the colour copy.",
+  "Blur it so the effect fades in softly: Convolution, Gaussian, StdDev 3–5 pixels, applied to the mask.",
+  "Shape it with HistogramTransformation on the mask: move the shadows slider right until the sky is near black, and the midtones slider until the object is light grey to white. The darker a part of the mask, the less the effect reaches it.",
+  "Apply it: drag the mask's tab onto the left-hand border of your image (or Mask › Select Mask). The protected areas turn red; Ctrl+K hides or shows the red.",
+  "Run the process on the image. Afterwards: Mask › Remove Mask.",
+]
+siril = [
+  "Save your image as orig.fit. Make a copy, apply the effect to the whole copy (sharpening, saturation…), and save it as fx.fit.",
+  "Open Image Processing › PixelMath. Add both images to the list and give them the variable names orig and fx.",
+  "Expression: fx*orig + orig*(1-orig). Bright pixels (orig near 1) take the processed version; dark pixels keep the original. Apply.",
+  "For a stronger mask (effect only on the brightest parts), use orig*orig as the weight: fx*orig*orig + orig*(1-orig*orig).",
+]
+
+[inverted_luminance]
+title = "Inverted luminance mask (effect on the dark parts)"
+what = "Black where the image is bright, white where it is dark. A process applied through it acts on the sky and the faint outskirts and leaves the bright object alone: the standard mask for noise reduction."
+pixinsight = [
+  "Make a luminance mask (duplicate, stretch if linear, Image › Extract › Lightness, Convolution StdDev 3–5 px, HistogramTransformation to separate sky and object).",
+  "Drag the mask's tab onto the left border of your image to apply it.",
+  "Mask › Invert Mask. Now the object shows red (protected) and the sky shows clear (open to the effect). Ctrl+K toggles the red.",
+  "Check the edge of the object: if noise reduction should still reach the faint outer parts, make the mask's midtones darker and apply it again.",
+  "Run the noise reduction, then Mask › Remove Mask.",
+]
+siril = [
+  "Save your image as orig.fit. Make a copy, run the noise reduction on the whole copy, and save it as dn.fit.",
+  "Open Image Processing › PixelMath. Add both images and name them orig and dn.",
+  "Expression: dn*(1-orig) + orig*orig. Dark pixels take the noise-reduced version; bright pixels keep the original detail. Apply.",
+  "Want the noise reduction to reach brighter areas too? Use (1-orig*orig) as the weight: dn*(1-orig*orig) + orig*orig*orig.",
+]
+
+[star]
+title = "Star mask (effect on the stars only)"
+what = "White on the stars, black everywhere else. Use it to shrink, desaturate or recolour stars without touching the nebula or galaxy."
+pixinsight = [
+  "Easiest: run StarNet2 (or StarXTerminator) on a duplicate with 'Generate star image' (StarXTerminator) or 'Generate star mask' (StarNet2) ticked. The star image it makes is the mask.",
+  "Or the classic tool: StarMask on a stretched copy. Start with Noise threshold 0.15, Scale 5, Large-scale 2, Small-scale 1, Smoothness 16. Raise the noise threshold if nebula texture shows in the mask; raise Scale if big stars are missed.",
+  "Grow the mask a little so star edges are included: MorphologicalTransformation, Dilation, size 3–5, on the mask; then Convolution StdDev 1–2 px to soften it.",
+  "Drag the mask onto the image's left border. Stars are now open, everything else red. Run the process (MorphologicalTransformation Erosion for smaller stars, CurvesTransformation for colour), then remove the mask.",
+]
+siril = [
+  "Image Processing › Star Processing › StarNet Star Removal, with 'Generate star mask' ticked. You get a starless image and a star image.",
+  "Work on the star image on its own (reduce it, change its stretch or saturation).",
+  "Put the two back together with Image Processing › Star Processing › Star Recomposition, where a slider sets how strong the stars come back.",
+]
+
+[range]
+title = "Range mask (effect on the object only, sharp-edged)"
+what = "White on everything above a brightness level (the object), black below it, with a soft edge you control. More precise than a luminance mask when the object and the sky have similar brightness in places."
+pixinsight = [
+  "Work on a stretched duplicate (or on the starless version, so stars do not end up in the mask).",
+  "Open RangeSelection and switch on Real-Time Preview.",
+  "Raise Lower limit (about 0.15–0.30) until the sky turns black and only the object stays white. Leave Upper limit at 1.0.",
+  "Fuzziness 0.1–0.2 and Smoothness 3–8 give a soft transition. Apply to the duplicate: that image is the mask.",
+  "Drag it onto the image's left border, run the process, remove the mask.",
+]
+siril = [
+  "Make the effect on a copy and save both versions (orig.fit and fx.fit).",
+  "In PixelMath, use a weight that only switches on above a level t (for example 0.25): fx*max(0, min(1, (orig-0.25)*5)) + orig*(1-max(0, min(1, (orig-0.25)*5))). The 5 sets how soft the edge is.",
+]
+
+[corner]
+title = "Corner mask (effect in one corner only)"
+what = "White in one corner, fading to black towards the rest of the frame. Use it to repair stars or a gradient in a single corner."
+pixinsight = [
+  "Open PixelMath. Untick 'Use a single RGB/K expression' only if you need colour; for a mask leave it ticked.",
+  "Expression for the upper right corner: iif(x()>w()*2/3 && y()<h()/3, 1, 0). (Upper left: x()<w()/3 && y()<h()/3. Lower right: x()>w()*2/3 && y()>h()*2/3.)",
+  "Under Destination: Create new image, Colour space Grayscale. Apply to your image (the new image gets its size).",
+  "Soften the edge: Convolution, StdDev 40–80 px, on the new mask.",
+  "Drag the mask onto your image's left border, run the repair (for example MorphologicalTransformation through it combined with a star mask: multiply the two masks in PixelMath, corner*stars), then remove the mask.",
+]
+siril = [
+  "Siril cannot limit a tool to one corner. Crop that corner off (Image › Crop), or process the stars there separately after StarNet and recombine.",
+]

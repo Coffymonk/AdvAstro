@@ -13,8 +13,9 @@ Inställningsfilen finns här:
 ## Allmänt
 
 - **Språk**: English eller Svenska. Gäller när du startar om programmet.
-- **Parallella arbetare**: hur många delbilder som mäts samtidigt. *Automatiskt* använder
-  alla processorkärnor; sänk det för att hålla datorn lättanvänd under långa analyser.
+- **Parallella arbetare**: hur många delbilder som mäts samtidigt. Välj i listan:
+  *Automatiskt* använder alla processorkärnor (antalet visas); ett lägre antal håller datorn
+  lättanvänd under långa analyser.
 
 <!-- id: settings.equipment -->
 ## Utrustning
@@ -38,6 +39,42 @@ bortvald.
 σ är sessionens robusta spridning; antal stjärnor är en andel av sessionens median. Ange
 värdena själv för *Anpassad*. **Kontrollera även bias, darks, flats och flat darks** slår på
 eller av [kalibreringskontrollerna](help:calibration).
+
+*?* bredvid varje värde öppnar dess förklaring nedan.
+
+<!-- id: settings.selection.fwhm -->
+### Gräns för stjärnstorlek (σ över median)
+
+Väljer bort delbilder vars stjärnor är mycket större än sessionens typiska storlek. Stora
+stjärnor betyder en oskarp delbild: fokusdrift när temperaturen sjunker, dålig seeing, vind
+eller ett guidningshack. Gränsen anges i σ, sessionens egen spridning: med 3 σ flaggas en
+delbild när stjärnstorleken ligger tre spridningar över medianen, så att både en stabil och
+en ojämn session bedöms rättvist. Lägre är striktare.
+
+<!-- id: settings.selection.ecc -->
+### Största utdragning
+
+Väljer bort delbilder med utdragna stjärnor. Värdet är excentriciteten: 0 är helt runt, 0,5
+är ungefär 15 % längre än brett (syns precis), 0,6 ungefär 25 % längre (tydligt ovalt) och
+0,8 ungefär 70 % längre. Orsaker: vind, guidningsfel,
+balans, periodiskt fel, eller en kabel som drar. Till skillnad från de andra gränserna är den
+här absolut, inte relativ till sessionen: en session där alla delbilder har utdragna
+stjärnor flaggas ändå. Lägre är striktare.
+
+<!-- id: settings.selection.stars -->
+### Minst antal stjärnor (andel av median)
+
+Väljer bort delbilder med för få stjärnor jämfört med sessionens typiska antal. Stjärnor
+försvinner bakom moln, dis, dagg på optiken, eller när delbilden är kraftigt ur fokus. Med
+0,6 flaggas en delbild med färre än 60 % av det vanliga antalet stjärnor. Högre är striktare.
+
+<!-- id: settings.selection.sky -->
+### Gräns för himmelsljus (σ över median)
+
+Väljer bort delbilder med mycket ljusare himmel än resten: månen som går upp, moln som lyses
+upp av stadsljus, gryning, eller en bils strålkastare. En ljusare himmel ger brus och
+gradienter som de andra delbilderna inte har. Gränsen anges i σ av sessionens himmelsnivåer.
+Lägre är striktare.
 
 <!-- id: settings.solver -->
 ## Plattlösning

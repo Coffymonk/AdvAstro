@@ -50,11 +50,15 @@ advastro rate BILD [alternativ]
 | `--object NAMN` | Objektets namn, hjälper plattlösningen |
 | `--tool pixinsight / siril` | Visa bara steg för ett program |
 | `--skill beginner / intermediate / advanced` | Bedöm på den här nivån |
+| `--type galaxy / emission / reflection / planetary / dark / cluster / globular / milkyway` | Objekttyp (standard: från namnet eller plattlösningen) |
+| `--starless auto / yes / no` | Om bilden är stjärnlös (standard: känn igen) |
+| `--workflow` | Skriv ut arbetsflödet för objekttypen i stället för betyget |
 
 ```
 advastro rate final.tif
 advastro rate final.jpg --sky --object "NGC 7000" --pdf betyg.pdf
 advastro rate final.xisf -f markdown --tool siril -o foruminlagg.md
+advastro rate m31.tif --type galaxy --workflow --tool pixinsight -o m31-arbetsflode.md
 ```
 
 <!-- id: cli.other -->

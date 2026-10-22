@@ -5,9 +5,11 @@ AdvAstro checks bias, dark, flat and flat-dark frames found next to your lights,
 own and against the lights. Turn this off in
 [Settings › Sub selection](help:settings.selection) if you want.
 
-Each type gets its own tab above the table, and the Session tab lists every check. Click a
-flagged file in the list to select it in the table. Odd frames are unticked in the
-suggested selection, just like subs.
+The calibration frames have their own mode: the **Calibration** tab under the toolbar
+(Ctrl+2). Each type gets its own tab above the table, and the *Checks* tab on the right lists
+every check. Click a flagged file in the list to select it in the table. Odd frames are
+unticked in the suggested selection, just like subs. **Double-click a frame** to see
+[everything about it](help:calibration.details).
 
 New to calibration frames? Start with [why they are needed](help:calibration.why). Each
 check below says what is measured, why it matters, when AdvAstro warns and what to do.
@@ -337,6 +339,23 @@ by hand or fix the type in the header.
 
 The results feed the [workflow](help:workflow): for example how to calibrate the flats, and
 whether to optimise the darks.
+
+<!-- id: calibration.details -->
+## One frame in detail
+
+Double-click a frame in the table to open its analysis in a window of its own:
+
+- **The frame** with an automatic stretch, so faint patterns such as amp glow, banding and
+  dust show. For darks, bias and flat darks, **Hot pixel map** shows every hot pixel as a
+  dot (yellow just above the limit, red and larger when much brighter) and counts them in
+  each ninth of the sensor.
+- **Why it was flagged**, if it was, in plain words.
+- **Settings**: exposure, gain, offset, temperature, binning and size.
+- **Measured**: every value next to the median of its set, with what it means.
+- **Hot pixels** (darks, bias, flat darks): how many there are and how strong (above 10
+  times the noise, very strong above 50 times, and *warm* pixels between 5 and 10 times),
+  whether they spread evenly or cluster towards a warm part of the sensor, how this frame
+  compares with the rest of the set, and what to do about them.
 
 <!-- id: calibration.glossary -->
 ## Glossary

@@ -2,22 +2,53 @@
 # Betygsätt min bild
 
 **Betygsätt min bild** bedömer en *färdig* bild, så som en erfaren astrofotograf eller en
-tävlingsdomare skulle göra, och talar om exakt hur den kan bli bättre. Öppna den från
-verktygsfältet (eller Ctrl+R). Den öppnas i ett eget fönster, så sessionen i huvudfönstret
-ligger kvar som den är.
+tävlingsdomare skulle göra, och talar om exakt hur den kan bli bättre. Det är den tredje
+fliken under verktygsfältet (Ctrl+3, eller Ctrl+R). När du växlar mellan Session,
+Kalibrering och Betygsätt min bild ligger det som laddats i var och en kvar.
 
 Öppna eller släpp en bild: FITS, XISF, TIFF (8, 16 eller 32 bitar), PNG, JPEG, WebP eller BMP.
-En fil som fortfarande är linjär (osträckt) känns igen och bedöms på en automatisk sträckning.
+JPEG-, PNG- och TIFF-filer som släpps var som helst i fönstret går direkt till Betygsätt min
+bild. En fil som fortfarande är linjär (osträckt) känns igen och bedöms på en automatisk
+sträckning.
 
 <!-- id: rate.window -->
-## Fönstret
+## Sidan
 
-- **Verktygsfältet**: *Öppna bild*, *Analysera igen*, *Himmelskontroller*, ett fält för
-  **Objekt**, *Exportera* och *Inställningar*. Skriv objektets namn (till exempel *M31* eller
+- **Verktygsfältet** (i det här läget): *Öppna bild*, *Analysera igen*, *Himmelskontroller*,
+  ett fält för **Objekt** och *Exportera*. Skriv objektets namn (till exempel *M31* eller
   *NGC 7000*) för att hjälpa plattlösning och jämförelser; det fylls i av sig självt när bilden
   identifierats.
+- **Ovanför bilden**: vilken sorts bild det är, **Objekt** och **Stjärnor**
+  ([objekttyp och stjärnlösa bilder](help:rate.kind)), och en rad som säger vad den bedömts
+  som.
 - **Vänster**: bilden, med knappar för överlägg som visar fynden i den.
-- **Höger**: flikarna *Omdöme*, *Fynd*, *Förbättra*, *Jämför* och *Detaljer*.
+- **Höger**: flikarna *Omdöme*, *Fynd*, *Förbättra*, *Arbetsflöde*, *Jämför* och *Detaljer*.
+
+<!-- id: rate.kind -->
+## Objekttyp och stjärnlösa bilder
+
+En galax, en nebulosa som fyller bilden, en stjärnhop och ett Vintergatsfält ska inte bedömas
+på samma sätt. Betygsätt min bild tar reda på vad bilden visar och anpassar omdömet, fynden,
+planen och arbetsflödet.
+
+**Objekt** känns igen, i den här ordningen, från plattlösningen (himmelskontroller), namnet
+i fältet Objekt, eller objektnamnet i filen. Välj själv i listan när det blir fel eller inte
+hittas; bilden bedöms då om direkt, utan att mätas igen.
+
+| Objekttyp | Vad som ändras |
+| --- | --- |
+| Galax | Bakgrund, brus och detaljer väger tyngre. Färgerna får vara dämpade (dämpat först under 8 %). Kontrastkontrollen över hela bilden hoppas över: en liten galax säger den lite om |
+| Emissions-, reflektions-, mörk nebulosa | En nebulosa som fyller bilden (enligt dess storlek, eller att det mesta av bilden är ljust) gör "gradient" och "låg kontrast" mildare: en del av det som ser ut som en gradient är nebulosan. Emissionsnebulosor får vara mer mättade |
+| Planetarisk nebulosa | Litet objekt: kontrastkontrollen över hela bilden hoppas över |
+| Öppen eller klotformig stjärnhop | Stjärnorna är motivet: stjärnorna väger mest, färglösa stjärnor kan vara ett stort fynd, och kontrollerna "stjärnorna tränger undan objektet", kontrast, mättnad och detaljer hoppas över |
+| Vintergatan / vidfält | Många stjärnor är väntat ("stjärnorna tränger undan objektet" hoppas över); ljusstyrkeändringar över fältet blir en notering, eftersom Vintergatan själv är en sådan |
+
+**Stjärnor** anger om bilden är **stjärnlös** (gjord med StarNet eller StarXTerminator).
+*Automatiskt* känner igen det: riktiga stjärnfält har tiotals till hundratals små, runda,
+ljusa stjärnor per megapixel, medan det som stjärnborttagning lämnar är stort eller svagt.
+En stjärnlös bild hoppar över alla stjärnkontroller och Gaia-kontrollerna, och kategorin
+*Stjärnor* räknas inte in i poängen. Bakgrund, färg, tonalitet och detaljer bedöms som
+vanligt.
 
 <!-- id: rate.verdict -->
 ## Omdömet
@@ -60,7 +91,9 @@ Varje kategori börjar på 100 och tappar poäng per fynd (stort 18, litet 8, kr
 | **Djup** | Hur svagt bilden når, mätt mot Gaia (efter himmelskontroller) |
 
 Totalpoängen är ett viktat medelvärde (stjärnor 22 %, bakgrund 20 %, färg 15 %, tonalitet
-15 %, detaljer 14 %, presentation 8 %, djup 6 %), minus 4 poäng per stort och 1 per litet
+15 %, detaljer 14 %, presentation 8 %, djup 6 %; vikterna ändras med
+[objekttypen](help:rate.kind), till exempel väger stjärnorna 36 % för en öppen stjärnhop och
+detaljerna 19 % för en galax), minus 4 poäng per stort och 1 per litet
 fynd, eftersom problem som en betraktare ser påverkar hela bilden. Orden: *Utmärkt* från 90,
 *Bra* från 75, *Godkänt* från 55, annars *Svagt*.
 
@@ -103,6 +136,35 @@ När du äger BlurXTerminator, NoiseXTerminator eller StarXTerminator
 ([Inställningar › Din programvara](help:settings.software)) använder stegen dem. **Nästa gång
 vid teleskopet** samlar det du kan ändra vid fotograferingen. *Kopiera* lägger planen i
 urklipp.
+
+Många steg görs **genom en mask**, så att en effekt bara når en del av bilden. Under ett
+sådant steg öppnar **Så gör du masken** ett recept steg för steg för ditt program:
+
+| Mask | Verkar på | Typisk användning |
+| --- | --- | --- |
+| Luminans | De ljusa delarna | Skärpning, mättnad, kontrast på objektet |
+| Inverterad luminans | De mörka delarna | Brusreducering i himlen |
+| Stjärnor | Stjärnorna | Krympa eller färga om stjärnor |
+| Intervall (range) | Objektet, med mjuk kant | Lokal kontrast, mättnad på en galax |
+| Hörn | Ett hörn | Laga stjärnor eller en gradient i ett hörn |
+
+Siril använder sina verktyg på hela bilden, så recepten där gör ändringen på en kopia och
+blandar tillbaka den med PixelMath, med bildens egen ljusstyrka som vikt.
+
+<!-- id: rate.workflow -->
+## Arbetsflöde för ditt objekt
+
+Fliken *Arbetsflöde* är en komplett väg för bildbehandlingen för objekttypen, från den
+staplade, linjära mastern till den färdiga bilden, för PixInsight eller Siril (växla överst):
+beskärning, bakgrundsextraktion, färgkalibrering, dekonvolution, brusreducering,
+stjärnseparation, sträckning, lokal kontrast, färg, stjärnor och export.
+
+Varje steg förklarar med enkla ord vad det gör och varför, ger stegen, och lägger till vad du
+ska tänka på med den här sortens objekt (till exempel: inga bakgrundspunkter nära en galax
+halo; sträck en stjärnhops stjärnor med ArcsinhStretch). Steg märkta **Din bild** åtgärdar
+något som Betygsätt min bild hittade i din bild. Steg som inte gäller utelämnas: en stjärnhop
+behåller sina stjärnor; en stjärnlös bild har inga stjärnsteg. *Kopiera* lägger arbetsflödet
+på urklipp, och *Exportera › Arbetsflöde som Markdown* sparar det.
 
 <!-- id: rate.sky -->
 ## Himmelskontroller
@@ -248,8 +310,11 @@ Det brus som är lättast att ta bort utan att förlora detaljer.
 <!-- id: finding.mottle -->
 #### Fläckig bakgrund
 Fläckar några pixlar stora, över 0,26 % i amplitud (stort över 0,45 %) och kraftiga jämfört
-med det fina bruset: typiskt för hård brusreducering av brusiga data, eller för kort
-integrationstid.
+med det fina bruset. Fläckighet är brus i större skala än kornet: brusreducering av det fina
+kornet (även NoiseXTerminator) lämnar det kvar, och hård utjämning gör det värre. Orsaker:
+för kort integrationstid, för lite dithring, och bakgrundsextraktion med för många punkter.
+Planen behandlar bara de större skalorna (MultiscaleLinearTransform lager 3–5, eller Sirils
+wavelets) genom en inverterad luminansmask, och behåller det fina kornet.
 
 <!-- id: finding.walking_noise -->
 #### Möjligt vandrande brus
@@ -259,7 +324,10 @@ Rapporteras som "möjligt" eftersom kraftig diagonal nebulosa kan se likadan ut.
 <!-- id: finding.hot_pixels -->
 #### Kvarvarande heta pixlar
 Mer än 30 isolerade ljusa pixlar, och fler än 3 per megapixel (stort över 25 per megapixel).
-Enstaka pixlar som står ensamma, till skillnad från stjärnor.
+En pixel räknas bara när den ligger långt över sin omgivning och grannarna inte lyfts alls:
+även en mycket skarp stjärna sprider lite ljus till pixlarna runt sig. Klicka *Visa* för att
+kontrollera de markerade pixlarna; är de små stjärnor snarare än enstaka prickar kan du
+bortse från fyndet.
 
 ### Färg
 
@@ -275,7 +343,8 @@ En färg dominerar himlen med mer än 1,2 % av full skala eller 16 % av himmelsn
 
 <!-- id: finding.muted -->
 #### Dämpade färger / nästan färglös
-Objektets medianmättnad är under 22 % (litet) eller 12 % (stort).
+Objektets medianmättnad är under 22 % (litet) eller 12 % (stort). För en galax, vars färger
+är subtila, under 8 % (litet) eller 5 % (stort). Kontrolleras inte för stjärnhopar.
 
 <!-- id: finding.oversaturated -->
 #### Kraftig mättnad / övermättade färger
@@ -312,8 +381,10 @@ guidning, balans, vind eller polinställning.
 <!-- id: finding.corner_elongation -->
 #### Utdragna stjärnor i ett hörn
 Stjärnorna i ett hörn har utdragning över 0,3, minst 0,15 mer än i mitten och 0,1 mer än i
-de andra hörnen (stort över 0,45): sensorlutning, fel avstånd till korrektorn på ena sidan,
-eller klämd optik.
+de andra hörnen (stort över 0,45). Orsaker: lutning, en fältutjämnare eller reducerare på fel
+avstånd med den optiska axeln utanför mitten, kollimering, ett klämt eller förskjutet optiskt
+element, eller roterade delbilder i stapeln. Planen förklarar hur du skiljer dem åt på en
+enda delbild (AberrationInspector) och hur du lagar den här bilden.
 
 <!-- id: finding.stars_soft -->
 #### Ganska stora / stora, mjuka stjärnor
@@ -335,8 +406,14 @@ Hörnstjärnorna är mer än 20 % större än i mitten (stort över 40 %). Utdra
 från mitten betyder koma (bakfokus); längs cirklar betyder astigmatism eller fältkrökning.
 
 <!-- id: finding.tilt -->
-#### Möjlig sensorlutning
+#### Ojämn skärpa mellan hörnen
 Det skarpaste och det mjukaste hörnet skiljer sig med mer än 30 % (stort över 50 %).
+Sensorlutning är bara en möjlig orsak. Andra: bakfokus lite fel med den optiska axeln utanför
+mitten; kollimering; klämd eller förskjuten optik; böjning (flexure); och själva staplingen
+(delbilder roterade efter en meridianvändning eller mellan nätter, eller en beskärning som
+inte är centrerad). Kontrollera en enda delbild: är den jämn så orsakar staplingen eller
+beskärningen det. Vrider du kameran 90° skiljer du orsaker på kamerasidan (de följer med) från
+orsaker i teleskopet (de stannar kvar).
 
 <!-- id: finding.star_rings -->
 #### Mörka ringar runt stjärnor
@@ -355,8 +432,14 @@ i linje.
 
 <!-- id: finding.few_stars -->
 #### För få stjärnor att mäta
-Färre än 15 stjärnor hittades, till exempel i en stjärnlös bild. Stjärnkontrollerna hoppas
-över.
+Färre än 15 stjärnor hittades, men bilden var inställd på *Med stjärnor*. Stjärnkontrollerna
+hoppas över.
+
+<!-- id: finding.starless -->
+#### Bedömd som stjärnlös bild
+Bilden är stjärnlös (upptäckt, eller vald under **Stjärnor**). Stjärnkontrollerna och
+Gaia-kontrollerna hoppas över och kategorin *Stjärnor* räknas inte in i poängen; allt annat
+bedöms som vanligt. Se [objekttyp och stjärnlösa bilder](help:rate.kind).
 
 ### Detaljer
 

@@ -117,6 +117,9 @@ class Measurements:
     fringe: float | None = None                  # blue minus red radius, px
     lateral_ca: float | None = None              # R/B centroid shift in the corners, px
     star_area_pct: float = 0.0
+    compact_sources: int = 0                     # small, round, clearly bright point sources
+    compact_density: float = 0.0                 # the same per megapixel
+    bright_sources: int = 0                      # sources well above the sky, any shape
     # detail
     detail_ratio: float | None = None
     edges: list[str] = field(default_factory=list)
@@ -413,6 +416,12 @@ def _stars(m: Measurements, rgb: np.ndarray, lum: np.ndarray, binned: int):
         return np.zeros_like(lum, bool)
     for k in s:
         s[k] = s[k][ok]
+    # Real stars are small, round and clearly brighter than the noise; what a star
+    # removal tool leaves behind (and nebula texture) is large or faint.
+    compact = (s["fwhm"] < 6.0) & (s["peak"] > 10 * noise) & (s["ellipticity"] < 0.35)
+    m.compact_sources = int(compact.sum())
+    m.compact_density = m.compact_sources / (h * w * binned * binned / 1e6)
+    m.bright_sources = int((s["peak"] > max(0.12, 20 * noise)).sum())
     xs_f, ys_f = s["x"], s["y"]
     has_ci = np.isfinite(s["ci"])
     m.star_colors = np.column_stack([xs_f[has_ci], ys_f[has_ci], s["ci"][has_ci]]).astype(
@@ -672,7 +681,11 @@ def _hot_pixels(m: Measurements, rgb: np.ndarray, lum: np.ndarray) -> None:
         ys, xs = np.nonzero(cand)
         local = ndi.median_filter(c, size=5, mode="nearest")[ys, xs]
         lift = c[ys, xs] - local
-        alone = (neigh[ys, xs] - local) < 0.3 * lift
+        # Even a very sharp star (FWHM 1.2 px) puts ~15 % of its peak into the brightest
+        # neighbour and lifts the ring around it; a hot pixel lifts neither.
+        ring_mean = ndi.uniform_filter(c, 3, mode="nearest")[ys, xs] * 9 / 8 - c[ys, xs] / 8
+        alone = ((neigh[ys, xs] - local) < 0.12 * lift) & \
+                ((ring_mean - local) < max(2.5 * m.noise, 0.04 * float(np.median(lift))))
         hits[ys[alone], xs[alone]] = True
     ys, xs = np.nonzero(hits)
     m.hot_pixels = int(ys.size)

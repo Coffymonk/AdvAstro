@@ -10,11 +10,13 @@
 | F5 | Analyze again |
 | Esc | Stop a running analysis |
 | Space / K / R | Toggle / keep / reject the selected subs |
+| Ctrl+1 / Ctrl+2 / Ctrl+3 | Session / Calibration / Rate my pic |
 | Ctrl+R | Rate my pic |
 | Ctrl+, | Settings |
 | Ctrl+N | Night mode |
 | F1 | Help for what you are looking at |
 | Mouse wheel, drag, double-click | Zoom, pan, fit / 100 % in the preview |
+| Double-click a calibration frame | Its full analysis, with the hot-pixel map |
 
 <!-- id: reference.glossary -->
 ## Glossary

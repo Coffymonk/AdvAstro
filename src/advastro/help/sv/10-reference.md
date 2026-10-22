@@ -10,11 +10,13 @@
 | F5 | Analysera igen |
 | Esc | Stoppa en pågående analys |
 | Mellanslag / K / R | Växla / behåll / ta bort markerade delbilder |
+| Ctrl+1 / Ctrl+2 / Ctrl+3 | Session / Kalibrering / Betygsätt min bild |
 | Ctrl+R | Betygsätt min bild |
 | Ctrl+, | Inställningar |
 | Ctrl+N | Nattläge |
 | F1 | Hjälp för det du tittar på |
 | Mushjul, dra, dubbelklick | Zooma, panorera, anpassa / 100 % i förhandsvisningen |
+| Dubbelklick på en kalibreringsbild | Hela analysen, med kartan över heta pixlar |
 
 <!-- id: reference.glossary -->
 ## Ordlista

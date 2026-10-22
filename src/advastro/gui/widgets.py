@@ -65,6 +65,7 @@ class StartPage(QWidget):
 
     openRequested = Signal()
     recentRequested = Signal(str)
+    rateRequested = Signal()
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -100,6 +101,11 @@ class StartPage(QWidget):
         self.open_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.open_btn.clicked.connect(self.openRequested)
         row.addWidget(self.open_btn)
+        self.rate_btn = QPushButton(tr("gui.start.rate"))
+        self.rate_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.rate_btn.setToolTip(tr("gui.tip.rate"))
+        self.rate_btn.clicked.connect(self.rateRequested)
+        row.addWidget(self.rate_btn)
         row.addStretch(1)
         z.addLayout(row)
         z.addSpacing(10)

@@ -2,21 +2,50 @@
 # Rate my pic
 
 **Rate my pic** judges a *finished* picture, the way an experienced astrophotographer or a
-competition judge would, and tells you exactly how to make it better. Open it from the
-toolbar (or Ctrl+R). It opens in its own window, so the session in the main window stays
-as it is.
+competition judge would, and tells you exactly how to make it better. It is the third tab
+under the toolbar (Ctrl+3, or Ctrl+R). Switching between Session, Calibration and Rate my
+pic keeps what each has loaded.
 
-Open or drop a picture: FITS, XISF, TIFF (8, 16 or 32-bit), PNG, JPEG, WebP or BMP. A file
-that is still linear (not stretched) is recognised and judged on an automatic stretch.
+Open or drop a picture: FITS, XISF, TIFF (8, 16 or 32-bit), PNG, JPEG, WebP or BMP. JPEG, PNG
+and TIFF files dropped anywhere in the window go straight to Rate my pic. A file that is still
+linear (not stretched) is recognised and judged on an automatic stretch.
 
 <!-- id: rate.window -->
-## The window
+## The page
 
-- **Toolbar**: *Open picture*, *Analyze again*, *Sky checks*, an **Object** field, *Export*
-  and *Settings*. Type the object's name (for example *M31* or *NGC 7000*) to help plate
+- **Toolbar** (in this mode): *Open picture*, *Analyze again*, *Sky checks*, an **Object**
+  field and *Export*. Type the object's name (for example *M31* or *NGC 7000*) to help plate
   solving and comparisons; it fills in by itself when the picture is identified.
+- **Above the picture**: what kind of picture it is, **Object** and **Stars**
+  ([object type and starless pictures](help:rate.kind)), and a line saying what it was
+  judged as.
 - **Left**: the picture, with overlay buttons that show the findings on it.
-- **Right**: the tabs *Verdict*, *Findings*, *Improve*, *Compare* and *Details*.
+- **Right**: the tabs *Verdict*, *Findings*, *Improve*, *Workflow*, *Compare* and *Details*.
+
+<!-- id: rate.kind -->
+## Object type and starless pictures
+
+A galaxy, a nebula that fills the frame, a star cluster and a Milky Way field should not be
+judged the same way. Rate my pic works out what the picture shows and adapts the verdict,
+the findings, the plan and the workflow.
+
+**Object** is detected, in this order, from the plate solve (sky checks), the name in the
+Object field, or the object name in the file. Choose it yourself in the list when it is
+wrong or not found; the picture is then judged again at once, without measuring again.
+
+| Object type | What changes |
+| --- | --- |
+| Galaxy | Background, noise and detail weigh more. Colours may be subtle (muted only below 8 %). The frame-wide contrast check is skipped: a small galaxy says little about it |
+| Emission, reflection, dark nebula | A nebula that fills the frame (from its size, or most of the frame being bright) makes "gradient" and "low contrast" milder: part of what looks like a gradient is the nebula. Emission nebulae may be more saturated |
+| Planetary nebula | Small object: the frame-wide contrast check is skipped |
+| Open or globular cluster | The stars are the subject: stars weigh most, colourless stars can be a major finding, and "stars crowd the object", contrast, saturation and detail checks are skipped |
+| Milky Way / wide field | Lots of stars is expected ("stars crowd the object" is skipped); brightness changes across the field are a note, since the Milky Way itself is one |
+
+**Stars** tells whether the picture is **starless** (made with StarNet or StarXTerminator).
+*Automatic* recognises it: real star fields have dozens to hundreds of small, round, bright
+stars per megapixel, while what star removal leaves is large or faint. A starless picture
+skips every star check and the Gaia checks, and the *Stars* category is left out of the
+score. Background, colour, tonality and detail are judged as usual.
 
 <!-- id: rate.verdict -->
 ## The verdict
@@ -59,7 +88,9 @@ Each category starts at 100 and loses points per finding (major 18, minor 8, cri
 | **Depth** | How faint the image goes, measured against Gaia (after sky checks) |
 
 The overall score is a weighted average (stars 22 %, background 20 %, colour 15 %, tonality
-15 %, detail 14 %, presentation 8 %, depth 6 %), minus 4 points per major and 1 per minor
+15 %, detail 14 %, presentation 8 %, depth 6 %; the weights shift with the
+[object type](help:rate.kind), for example stars weigh 36 % for an open cluster and detail
+19 % for a galaxy), minus 4 points per major and 1 per minor
 finding, because problems a viewer notices affect the whole picture. Words: *Excellent*
 from 90, *Good* from 75, *Fair* from 55, otherwise *Weak*.
 
@@ -100,6 +131,35 @@ measured in your picture, and gives concrete steps for PixInsight or Siril (swit
 When you own BlurXTerminator, NoiseXTerminator or StarXTerminator
 ([Settings › Your software](help:settings.software)), the steps use them. **Next time at the
 telescope** collects what to change during capture. *Copy* puts the plan on the clipboard.
+
+Many steps work **through a mask**, so that an effect reaches only part of the picture. Under
+such a step, **How to make the mask** opens a step-by-step recipe for your program:
+
+| Mask | Effect on | Typical use |
+| --- | --- | --- |
+| Luminance | The bright parts | Sharpening, saturation, contrast on the object |
+| Inverted luminance | The dark parts | Noise reduction in the sky |
+| Star | The stars | Shrinking or recolouring stars |
+| Range | The object, with a soft edge | Local contrast, saturation on a galaxy |
+| Corner | One corner | Repairing stars or a gradient in one corner |
+
+Siril applies its tools to the whole image, so its recipes make the change on a copy and
+blend it back with PixelMath, using the picture's own brightness as the weight.
+
+<!-- id: rate.workflow -->
+## Workflow for your target
+
+The *Workflow* tab is a complete processing route for the object type, from the stacked,
+linear master to the finished picture, for PixInsight or Siril (switch at the top):
+cropping, background extraction, colour calibration, deconvolution, noise reduction, star
+separation, stretching, local contrast, colour, stars and export.
+
+Every stage explains in plain words what it does and why, gives the steps, and adds what to
+watch for with this kind of object (for example: no background samples near a galaxy's
+halo; stretch a cluster's stars with ArcsinhStretch). Stages marked **Your image** address
+something Rate my pic found in your picture. Stages that do not apply are left out: a
+cluster keeps its stars; a starless picture has no star stages. *Copy* puts the workflow on
+the clipboard, and *Export › Workflow as Markdown* saves it.
 
 <!-- id: rate.sky -->
 ## Sky checks
@@ -243,8 +303,11 @@ major above 1.6 %). The easiest noise to remove without losing detail.
 <!-- id: finding.mottle -->
 #### Blotchy background (mottle)
 Blotches a few pixels across, above 0.26 % amplitude (major above 0.45 %) and strong
-compared with the fine grain: typical of strong noise reduction on noisy data, or too little
-integration.
+compared with the fine grain. Mottle is noise at a larger scale than the grain: fine-grain
+noise reduction (NoiseXTerminator included) leaves it, and strong smoothing makes it worse.
+Causes: too little integration time, too little dithering, and background extraction with
+too many samples. The plan treats the larger scales only (MultiscaleLinearTransform layers
+3–5, or Siril's wavelets) through an inverted luminance mask, and keeps the fine grain.
 
 <!-- id: finding.walking_noise -->
 #### Possible walking noise
@@ -254,7 +317,10 @@ dithering. Reported as "possible" because strong diagonal nebulosity can look si
 <!-- id: finding.hot_pixels -->
 #### Hot pixels left
 More than 30 isolated bright pixels, and more than 3 per megapixel (major above 25 per
-megapixel). Single pixels that stand alone, unlike stars.
+megapixel). A pixel counts only when it is far above its surroundings and its neighbours
+are not lifted at all: even a very sharp star spreads some light into the pixels around it.
+Click *Show* to check the marked pixels; if they are tiny stars rather than single dots,
+ignore the finding.
 
 ### Colour
 
@@ -270,7 +336,8 @@ One colour dominates the sky by more than 1.2 % of full scale or 16 % of the sky
 
 <!-- id: finding.muted -->
 #### Muted / almost colourless
-Median saturation of the object is under 22 % (minor) or 12 % (major).
+Median saturation of the object is under 22 % (minor) or 12 % (major). For a galaxy, whose
+colours are subtle, under 8 % (minor) or 5 % (major). Not checked for star clusters.
 
 <!-- id: finding.oversaturated -->
 #### Strong / oversaturated colours
@@ -307,8 +374,10 @@ guiding, balance, wind or polar alignment.
 <!-- id: finding.corner_elongation -->
 #### Stretched stars in one corner
 One corner's stars are elongated above 0.3, at least 0.15 more than the centre and 0.1 more
-than the other corners (major above 0.45): sensor tilt, corrector spacing on one side, or
-pinched optics.
+than the other corners (major above 0.45). Causes: tilt, a flattener or reducer at the wrong
+distance with the optical axis off-centre, collimation, a pinched or shifted optical element,
+or rotated subs in the stack. The plan explains how to tell them apart on a single sub
+(AberrationInspector) and how to repair this picture.
 
 <!-- id: finding.stars_soft -->
 #### Stars on the large side / large, soft stars
@@ -330,8 +399,13 @@ towards or away from the centre means coma (back focus); along circles means ast
 or field curvature.
 
 <!-- id: finding.tilt -->
-#### Possible sensor tilt
-The sharpest and softest corners differ by more than 30 % (major above 50 %).
+#### Uneven sharpness between the corners
+The sharpest and softest corners differ by more than 30 % (major above 50 %). Sensor tilt is
+only one possible cause. Others: back focus slightly off with the optical axis off-centre;
+collimation; pinched or shifted optics; flexure; and the stack itself (subs rotated after a
+meridian flip or between nights, or an off-centre crop). Check one single sub: if it is even,
+the stack or the crop causes it. Rotating the camera 90° tells camera-side causes (they move
+with it) from telescope-side ones (they stay).
 
 <!-- id: finding.star_rings -->
 #### Dark rings around stars
@@ -350,7 +424,14 @@ misalignment.
 
 <!-- id: finding.few_stars -->
 #### Few stars to measure
-Fewer than 15 stars were found, for example in a starless image. Star checks are skipped.
+Fewer than 15 stars were found, but the picture was set to *With stars*. Star checks are
+skipped.
+
+<!-- id: finding.starless -->
+#### Judged as a starless image
+The picture is starless (detected, or chosen under **Stars**). Star checks and the Gaia
+checks are skipped and the *Stars* category is left out of the score; everything else is
+judged as usual. See [object type and starless pictures](help:rate.kind).
 
 ### Detail
 

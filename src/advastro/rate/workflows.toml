@@ -1,0 +1,256 @@
+# Processing workflow per object type, for Rate my pic's Workflow tab.
+#
+# The stages run from the stacked, still linear master to the finished picture. Each:
+#   id, title
+#   kinds      "all", or the object types it applies to (galaxy, emission, reflection,
+#              planetary, dark, cluster, globular, milkyway, unknown)
+#   skip       object types it does not apply to
+#   fixes      Rate my pic findings this stage addresses: when the picture has one of
+#              them, the stage is marked "your image needs this"
+#   explain    what the stage does and why, for a beginner
+#   pixinsight / siril            steps
+#   <tool>@<add-on>               steps used instead with that add-on
+#   "note#<kind>"                 what to watch for with this object type
+#   linear     true when the stage works on linear (unstretched) data
+
+[intro]
+all = "This is a complete processing route from the stacked master to the finished picture, adapted to {object}. Stages marked 'Your image' address something Rate my pic found in this picture. Keep the order: some steps only work on linear data (before the stretch), others only after it."
+galaxy = "Galaxies are small, with a bright core, faint outer arms and a halo that fades into the sky. The work is in a perfectly flat background (so the halo survives), sharp detail in the arms, a core that is not burned out, and subtle, true colour."
+emission = "Emission nebulae glow red in hydrogen-alpha and teal in oxygen. They are often large and fill the frame, so background extraction must not remove nebula, and stars are usually reduced so the gas takes centre stage."
+reflection = "Reflection nebulae are dust lit by nearby stars: faint, blue, and full of fine texture. Good colour calibration and a gentle, careful stretch matter most; the faint dust sits just above the background."
+planetary = "Planetary nebulae are small and bright, with a much brighter centre than the outer shells. The work is in resolving the small structure (deconvolution), keeping the bright inner part from burning out, and a tight crop."
+dark = "Dark nebulae are clouds of dust seen against stars and glow. The dust is only visible if the background is not too dark and the stars do not overwhelm it, so star reduction and a gentle stretch are key."
+cluster = "In a star cluster the stars are the subject. Their size, sharpness and colour decide the picture, so the stars are never removed; stretching that keeps star colour is the most important step."
+globular = "A globular cluster is a ball of hundreds of thousands of stars with a very dense core. The core easily burns out to a white blob; deconvolution and a careful stretch resolve stars right into the centre."
+milkyway = "A wide Milky Way field is full of stars, dust and glowing gas, usually shot with a short lens. Gradients from light pollution, lens vignetting and the sheer number of stars are the main challenges."
+unknown = "Set the object type above for a workflow tailored to your target; this is the general route."
+
+[[stage]]
+id = "crop"
+title = "Crop the stacking edges"
+kinds = "all"
+linear = true
+fixes = ["edges"]
+explain = "Where the subs did not overlap (dithering, drift, meridian flip), the stack has dark or noisy borders. Crop them first: every later tool measures the image, and the borders confuse those measurements."
+pixinsight = [
+  "DynamicCrop: drag a box inside the clean area (use a strong STF to see the borders), then Execute.",
+  "Next time, WBPP can do it: tick Autocrop in the Integration settings.",
+]
+siril = [
+  "Draw a selection inside the clean area, right-click › Crop.",
+  "Or use the Crop option when stacking the registered sequence.",
+]
+
+[[stage]]
+id = "background"
+title = "Remove gradients (background extraction)"
+kinds = "all"
+linear = true
+fixes = ["gradient", "color_gradient", "color_cast"]
+explain = "Light pollution, moonlight and leftover vignetting add a smooth glow that is brighter on one side. The tool builds a model of that glow from points you mark as 'empty sky' and subtracts it. It must be done while the image is linear, before any stretch."
+pixinsight = [
+  "GraXpert (a free program, also available as a PixInsight process): Background Extraction with the AI method, Correction Subtraction, Smoothing about 0.5.",
+  "Or DynamicBackgroundExtraction: click Generate with 15–25 samples per row, then delete every sample that sits on a star, nebula or galaxy. Correction: Subtraction. Execute and look at the background model it creates: it should be a smooth slope.",
+  "Check the result with a strong STF: the sky should look even from side to side.",
+]
+siril = [
+  "Image Processing › Background Extraction: GraXpert (AI) if installed, or the RBF method with samples on empty sky; Correction: Subtraction.",
+  "Check the result with the Autostretch view: the sky should look even.",
+]
+"note#galaxy" = "Place no samples near the galaxy: its faint halo reaches much further than you see. Keep samples at least one galaxy diameter away."
+"note#emission" = "With nebula across the frame, use few samples (10–15), only in dark gaps. Look at the background model: if it shows nebula shapes, you are removing nebula."
+"note#reflection" = "The faint dust is easily mistaken for gradient. Use few samples, and only where you are sure there is no dust."
+"note#dark" = "Dark nebula fields have almost no empty sky. Use the AI method, or very few samples, and check the model carefully."
+"note#milkyway" = "With a camera lens, vignetting is strong: correct it with flats first. The Milky Way band is real brightness; let the model follow only the smooth sky glow."
+
+[[stage]]
+id = "color"
+title = "Colour calibration"
+kinds = "all"
+linear = true
+fixes = ["color_cast", "green_cast", "color_calibration", "star_color", "magenta_stars"]
+explain = "The camera does not see colours in the right balance. Spectrophotometric colour calibration compares the stars in your picture with a catalogue of their real colours, plate solves the image, and sets the colour balance so that stars, and with them the nebula or galaxy, get their true colours."
+pixinsight = [
+  "Plate solve the image: Script › Astrometry › ImageSolver (needed by SPCC).",
+  "SpectrophotometricColorCalibration: choose your camera's sensor (or a generic CMOS curve) and your filter; for a one-shot colour camera without filter, pick the camera's RGB filter set. Background reference: a preview on empty sky.",
+  "Then BackgroundNeutralization with a preview on empty sky if the sky is still not neutral grey.",
+]
+siril = [
+  "Image Processing › Color Calibration › Spectrophotometric Color Calibration: it plate solves and calibrates in one step. Choose your sensor and filter.",
+  "Then Background Neutralization (in the same menu) on an empty-sky selection if needed.",
+]
+"note#emission" = "With a dual- or narrowband filter, colour calibration on stars is not meaningful for the nebula. Calibrate the stars, then set the nebula colours by palette (see the colour stage)."
+"note#cluster" = "This is the most important step for a cluster: true star colours (blue-white, yellow, orange) are what makes it look real."
+
+[[stage]]
+id = "deconvolution"
+title = "Sharpen with deconvolution"
+kinds = "all"
+linear = true
+fixes = ["stars_soft", "low_detail", "corner_stars", "corner_elongation", "tilt", "trailed_stars"]
+explain = "Seeing and optics blur every star and every detail the same way. Deconvolution measures that blur from the stars (the point spread function, PSF) and reverses part of it. Done right it tightens stars and brings out fine structure; done too hard it leaves dark rings around stars."
+pixinsight = [
+  "Measure the blur: Script › Image Analysis › PSFImage (or DynamicPSF on 20–40 medium stars, then Export synthetic PSF).",
+  "Make a luminance mask so the sky is not sharpened (it would sharpen the noise).",
+  "Deconvolution: External PSF (the image from step 1), Richardson-Lucy, 20–40 iterations, Deringing on (Global dark 0.02–0.05, with a star mask as local deringing support). Try on a preview first; stop when stars get dark rings.",
+]
+"pixinsight@BlurXTerminator" = [
+  "BlurXTerminator on the linear image. First Correct Only (fixes elongated and uneven stars across the field), then a second run: Sharpen Stars 0.25–0.5, Adjust Star Halos -0.1 to -0.2, Sharpen Nonstellar 0.3–0.7.",
+]
+siril = [
+  "Image Processing › Deconvolution: PSF from the image's stars (Blind or Stars method), Richardson-Lucy, 10–30 iterations. Preview on a small area; stop before rings appear.",
+]
+"note#galaxy" = "Deconvolution is where galaxy detail comes from: dust lanes and arm structure. Sharpen Nonstellar 0.5–0.7 with BlurXTerminator is common."
+"note#globular" = "Deconvolution resolves stars into the dense core. Be careful with rings in the crowded centre."
+"note#planetary" = "The small inner structure of a planetary nebula gains the most here."
+"note#milkyway" = "With a camera lens, Correct Only is the important part: lenses make stars stretched towards the corners."
+
+[[stage]]
+id = "noise"
+title = "Reduce noise (linear)"
+kinds = "all"
+linear = true
+fixes = ["noise", "mottle", "color_noise", "plastic"]
+explain = "Stretching makes noise visible, so gentle noise reduction comes before it. It should be strongest in the dark sky and weakest on the object, which is what an inverted luminance mask does. Leave a little fine grain: a perfectly smooth sky looks painted."
+pixinsight = [
+  "Make an inverted luminance mask (Rate my pic's Improve tab has the recipe).",
+  "MultiscaleLinearTransform through it: 4–5 layers, noise reduction on layers 1–4 (thresholds 3 / 2 / 1 / 0.5, amount 0.5). For blotches (mottle), also layer 5 and skip layer 1.",
+  "Or TGVDenoise through the mask, Strength about 5.",
+]
+"pixinsight@NoiseXTerminator" = [
+  "NoiseXTerminator: Denoise 0.6–0.8, Detail 0.15. No mask needed. If blotches remain, MultiscaleLinearTransform on layers 3–5 through an inverted luminance mask.",
+]
+siril = [
+  "Image Processing › Denoise: NL-Bayes, modulation 0.7–1.0.",
+  "To spare the object, denoise a copy and blend it into the dark areas with PixelMath: dn*(1-orig) + orig*orig.",
+]
+"note#galaxy" = "Go gently around the galaxy: the faint halo and outer arms are at the noise level and disappear with strong noise reduction."
+"note#cluster" = "Keep noise reduction off the stars (luminance mask) so faint stars are not smoothed away."
+
+[[stage]]
+id = "stars_off"
+title = "Separate the stars"
+kinds = ["galaxy", "emission", "reflection", "planetary", "dark", "milkyway", "unknown"]
+linear = true
+fixes = ["big_stars", "star_dominance", "white_cores", "magenta_stars"]
+explain = "An AI tool removes the stars and gives you two images: the starless object and the stars alone. You then stretch and colour the object freely without bloating the stars, and add the stars back at the end, at the size and brightness you choose."
+pixinsight = [
+  "StarNet2 (free) on the linear image with 'Linear data' ticked and 'Generate star mask' on; or StarXTerminator with 'Generate star image'.",
+  "You now have a starless image and a stars image. Process them separately; they are combined again in the star stage.",
+]
+"pixinsight@StarXTerminator" = [
+  "StarXTerminator on the linear image with 'Generate star image' ticked. You get a starless image and a stars image.",
+]
+siril = [
+  "Image Processing › Star Processing › StarNet Star Removal, with 'Generate star mask' ticked (Siril can run it on linear data with the pre-stretch option).",
+]
+"note#galaxy" = "Optional for galaxies. Many keep the stars and only reduce them a little at the end; separating helps when bright foreground stars sit close to the galaxy."
+"note#dark" = "Essential for dark nebulae: the dust only shows when the stars are much fainter than the dust."
+
+[[stage]]
+id = "stretch"
+title = "Stretch: make the faint signal visible"
+kinds = "all"
+fixes = ["linear", "dark_background", "bright_background", "crushed_black", "clipped_highlights", "low_contrast", "shadow_clip"]
+explain = "The linear image looks almost black because the faint signal sits just above the sky. Stretching lifts the dark and middle tones much more than the bright ones. Do it in several gentle steps, and keep the background around 8–12 % brightness: dark, but not black."
+pixinsight = [
+  "GeneralizedHyperbolicStretch: set the Symmetry point at the background peak (click the histogram), Stretch factor 1–3, Highlight protection 0.9. Apply 2–4 times, a little each time.",
+  "Or the simple route: ScreenTransferFunction Auto Stretch, drag its settings into HistogramTransformation, apply.",
+  "Check the background with the readout on empty sky: about 0.08–0.12.",
+]
+siril = [
+  "Image Processing › Generalized Hyperbolic Stretch: symmetry point at the background peak, small stretches, highlight protection on. Repeat until the object is bright enough.",
+  "Or Asinh Transformation followed by Histogram Transformation.",
+]
+"note#galaxy" = "Protect the core: highlight protection in GHS, or the core turns into a white disc."
+"note#cluster" = "Stretch the stars with ArcsinhStretch instead: it keeps their colour, where a normal stretch turns bright stars white."
+"note#globular" = "Use ArcsinhStretch, and stop before the core clips; HDRMultiscaleTransform recovers it later."
+"note#reflection" = "Stretch gently; the faint dust appears gradually. A too-dark background hides it."
+"note#dark" = "Leave the background a little brighter than usual (12–15 %): the dark dust must be darker than the sky around it."
+
+[[stage]]
+id = "local"
+title = "Local contrast and bright cores"
+kinds = ["galaxy", "emission", "reflection", "planetary", "dark", "globular", "milkyway", "unknown"]
+fixes = ["low_contrast", "low_detail", "clipped_highlights"]
+explain = "After the stretch, the object can look flat. Local contrast tools brighten structure relative to its surroundings, and HDR tools bring back detail in bright cores that would otherwise burn out. Apply them through a mask on the object so the sky is not affected."
+pixinsight = [
+  "Make a range mask on the object (Improve tab recipe).",
+  "LocalHistogramEqualization through it: Kernel radius 64–128, Contrast limit 1.5–2, Amount 0.2–0.35. A second pass with radius 16–32 brings out finer structure.",
+  "For bright cores: HDRMultiscaleTransform, 6–8 layers, Lightness mask on.",
+]
+siril = [
+  "Image Processing › CLAHE on the starless image: tile size 8–16, clip limit 1.5–2. Blend back with PixelMath if the sky gets too much contrast.",
+]
+"note#galaxy" = "HDRMultiscaleTransform on the core, LocalHistogramEqualization (radius 32–64) on the arms."
+"note#emission" = "LocalHistogramEqualization at two radii (128, then 32) gives the classic 3D look to gas."
+"note#globular" = "HDRMultiscaleTransform with 4–6 layers resolves the core; skip LHE."
+
+[[stage]]
+id = "colour"
+title = "Colour and saturation"
+kinds = "all"
+fixes = ["muted", "oversaturated", "channel_clip", "green_cast"]
+explain = "A stretch removes some colour, so most images need a little saturation afterwards, on the object only. Small steps through a luminance or range mask look natural; one big step looks garish and brings up colour noise in the sky."
+pixinsight = [
+  "SCNR (Green, Average Neutral, amount 0.6–1.0) if there is a green tint.",
+  "CurvesTransformation, saturation (S) channel, small lift, through a luminance mask. Repeat 2–3 times rather than once strongly.",
+  "Narrowband palettes: for HOO, PixelMath R = Ha, G = B = OIII (or a blend); for SHO, R = SII, G = Ha, B = OIII, then hue adjustments in CurvesTransformation.",
+]
+siril = [
+  "Remove Green Noise (SCNR) if needed.",
+  "Color Saturation: amount 0.3–0.6, Background factor 1.5–2, in small steps.",
+  "Narrowband: PixelMath or the RGB composition tool to map channels (HOO or SHO).",
+]
+"note#galaxy" = "Aim for a yellow-white core, blue arms and pink HII regions. Saturate gently; galaxies over-saturate quickly."
+"note#emission" = "Hα red and OIII teal are vivid by nature; watch that the red does not clip."
+"note#reflection" = "Blue dust with yellow or orange stars; avoid making the dust cyan."
+
+[[stage]]
+id = "stars_on"
+title = "Stars: stretch, reduce and put back"
+kinds = ["galaxy", "emission", "reflection", "planetary", "dark", "milkyway", "unknown"]
+fixes = ["big_stars", "star_dominance", "white_cores", "stars_soft", "magenta_stars", "star_color"]
+explain = "The stars image from the separation stage is stretched on its own, gently so stars stay small and keep their colour, and then added back. The strength you add them back at decides how dominant the stars are."
+pixinsight = [
+  "Stretch the stars image with ArcsinhStretch (stretch factor 20–60, black point just above the background): it keeps colour in the stars.",
+  "Combine with PixelMath (screen blend, no clipping): ~((~starless)*(~stars)). To make stars weaker, multiply them first: ~((~starless)*(~(stars*0.8))).",
+]
+siril = [
+  "Stretch the stars image with Asinh Transformation (it preserves colour).",
+  "Image Processing › Star Processing › Star Recomposition: load the starless and the stars image, and set how strong the stars come back.",
+]
+"note#dark" = "Bring stars back at 50–70 % strength so the dust stays visible."
+"note#milkyway" = "Reduce star strength by 20–40 % so the Milky Way's structure stays in front."
+"note#galaxy" = "Keep foreground stars small and true in colour; they frame the galaxy."
+
+[[stage]]
+id = "cluster_stars"
+title = "Stars: size and colour (the subject)"
+kinds = ["cluster", "globular"]
+fixes = ["big_stars", "white_cores", "stars_soft", "star_color", "star_dominance"]
+explain = "In a cluster the stars are the picture. Keep them tight and coloured: reduce the brightest ones a little so the fainter members show, and lift star colour through a star mask."
+pixinsight = [
+  "MorphologicalTransformation (Morphological Selection 0.3, size 3, Amount 0.3–0.5) through a star mask on the brightest stars.",
+  "CurvesTransformation, saturation channel, through a star mask: a small lift for star colour.",
+]
+siril = [
+  "Color Saturation on the stars (low Background factor so faint stars also gain colour).",
+]
+
+[[stage]]
+id = "finish"
+title = "Finish and export"
+kinds = "all"
+fixes = ["banding", "banding_risk", "jpeg", "small_image", "eight_bit", "edges", "off_centre"]
+explain = "Last checks: a final crop for composition, a light curves adjustment, then save the master in full quality and export copies for sharing. Exporting is the very last step: never process a JPEG further."
+pixinsight = [
+  "Final CurvesTransformation for overall contrast (a gentle S-curve), checking the background stays at 8–12 %.",
+  "Save the master as XISF or 16-bit TIFF.",
+  "Export for sharing: File › Save As › JPEG, quality 92–95, full resolution (or at least 3000 px on the long side).",
+]
+siril = [
+  "A last Curves adjustment if needed.",
+  "Save the master as 32-bit FITS and as 16-bit TIFF.",
+  "Save As JPEG, quality 92–95, from that master.",
+]

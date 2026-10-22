@@ -4,10 +4,12 @@
 <!-- id: session.window -->
 ## Huvudfönstret
 
+- **Lägesflikar** under verktygsfältet: *Session* (det här kapitlet), *Kalibrering*
+  ([kalibreringsbilderna](help:calibration)) och *Betygsätt min bild*
+  ([färdiga bilder](help:rate)). Var och en behåller det som laddats; fliken visar ett antal
+  och ett varningstecken när något flaggats. Ctrl+1, Ctrl+2 och Ctrl+3 växlar mellan dem.
 - **Verktygsfältet**: *Öppna*, *Analysera* (igen), *Stoppa*, *Lös*, *Förslag*, *Exportera*,
-  och till höger *Betygsätt bild*, *Inställningar*, *Natt* och *Hjälp*.
-- **Bildtypsflikar** ovanför tabellen: *Ljusbilder* och, när de finns, *Darks*, *Flats*,
-  *Flat darks* och *Bias*, var och en med antal och ett varningstecken när något flaggats.
+  och till höger *Inställningar*, *Natt* och *Hjälp*. Verktygen ändras med läget.
 - **Tabellen**: en rad per fil. Klicka på en rad för att förhandsvisa den.
 - **Filterknappar** ovanför tabellen: *Alla*, *Flaggade*, *Borttagna*.
 - **Förhandsvisningen**: den valda filen med automatisk sträckning. Mushjulet zoomar, dra för

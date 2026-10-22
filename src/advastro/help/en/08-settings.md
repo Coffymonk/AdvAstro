@@ -12,8 +12,9 @@ you click *Save* and apply at once; the subs are not measured again. The setting
 ## General
 
 - **Language**: English or Svenska. Takes effect when you restart the app.
-- **Parallel workers**: how many subs are measured at the same time. *Automatic* uses every
-  processor core; lower it to keep the computer responsive during long analyses.
+- **Parallel workers**: how many subs are measured at the same time. Pick from the list:
+  *Automatic* uses every processor core (the number is shown); a lower number keeps the
+  computer responsive during long analyses.
 
 <!-- id: settings.equipment -->
 ## Equipment
@@ -37,6 +38,41 @@ rejection.
 σ is the robust spread of the session; star count is a share of the session median. Set the
 values yourself for *Custom*. **Also check bias, darks, flats and flat darks** turns the
 [calibration checks](help:calibration) on or off.
+
+The *?* next to each value opens its explanation below.
+
+<!-- id: settings.selection.fwhm -->
+### Star size limit (σ above median)
+
+Rejects subs whose stars are much larger than the session's typical size. Large stars mean
+a blurred sub: focus drift as the temperature falls, poor seeing, wind or a guiding hiccup.
+The limit is in σ, the session's own spread: with 3 σ, a sub is flagged when its star size
+is three spreads above the median, so a steady session and a variable one are both judged
+fairly. Lower is stricter.
+
+<!-- id: settings.selection.ecc -->
+### Maximum star elongation
+
+Rejects subs whose stars are stretched. The value is the eccentricity: 0 is perfectly round,
+0.5 is about 15 % longer than wide (just visible), 0.6 about 25 % longer (clearly oval) and
+0.8 about 70 % longer. Causes: wind, guiding
+errors, balance, periodic error, or a cable dragging. Unlike the other limits, this one is
+absolute, not relative to the session: a session where every sub is trailed is still
+flagged. Lower is stricter.
+
+<!-- id: settings.selection.stars -->
+### Minimum stars (share of median)
+
+Rejects subs with too few stars compared with the session's typical count. Stars disappear
+behind clouds, haze, dew on the optics, or when the sub is badly out of focus. With 0.6, a
+sub with fewer than 60 % of the usual number of stars is flagged. Higher is stricter.
+
+<!-- id: settings.selection.sky -->
+### Sky brightness limit (σ above median)
+
+Rejects subs with a much brighter sky than the rest: the Moon rising, clouds lit by town
+light, dawn, or a car's headlights. A brighter sky adds noise and gradients that the other
+subs do not have. The limit is in σ of the session's sky levels. Lower is stricter.
 
 <!-- id: settings.solver -->
 ## Plate solving

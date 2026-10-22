@@ -33,6 +33,38 @@ def _plain(v):
     return v
 
 
+def context_text(r: Rating) -> str:
+    """'Emission nebula (North America Nebula, from the name), starless'."""
+    from advastro.rate.objects import NAMES
+
+    c = r.context
+    src = {"solve": "from the plate solve", "name": "from the name", "header": "from the file",
+           "manual": "chosen"}.get(c.kind_source, "")
+    extra = ", ".join(x for x in (c.name, src) if x)
+    text = NAMES.get(c.kind, c.kind) + (f" ({extra})" if extra else "")
+    if c.starless:
+        text += ", starless"
+    return text
+
+
+def _mask_lines(keys: list[str], tool: str | None) -> list[str]:
+    from advastro.rate.judge import load_masks
+
+    recipes = load_masks()
+    lines = []
+    for k in keys:
+        m = recipes.get(k)
+        if not m:
+            continue
+        lines += ["", f"*How to make the mask: {m['title']}.* {m.get('what', '')}"]
+        for t in (["pixinsight", "siril"] if tool is None else [tool.lower()]):
+            steps = m.get(t, [])
+            if steps:
+                lines += ["", f"{'PixInsight' if t == 'pixinsight' else 'Siril'}:", ""]
+                lines += [f"{i}. {x}" for i, x in enumerate(steps, 1)]
+    return lines
+
+
 def measurements_dict(r: Rating) -> dict:
     m = r.measurements
     out = {}
@@ -69,6 +101,9 @@ def to_json(r: Rating) -> str:
         "file": str(p.path), "format": p.format, "bit_depth": p.bit_depth,
         "width": p.width, "height": p.height, "mono": p.mono,
         "skill": r.skill, "score": r.score, "verdict": r.verdict, "headline": r.headline,
+        "context": {"object_type": r.context.kind, "source": r.context.kind_source,
+                    "object": r.context.name, "starless": r.context.starless,
+                    "fills_frame": r.context.fills_frame},
         "categories": {k: {"score": v.score, "verdict": v.verdict}
                        for k, v in r.categories.items()},
         "findings": [{"id": f.id, "category": f.category, "severity": f.severity,
@@ -85,7 +120,8 @@ def to_markdown(r: Rating, tool: str | None = None) -> str:
     p = r.picture
     lines = [f"# Rate my pic: {p.path.name}", "",
              f"**{VERDICT_NAMES[r.verdict]}** · score {r.score}/100 (judged as "
-             f"{r.skill}) — {r.headline}", "", "| Category | Score | Verdict |", "|---|---|---|"]
+             f"{r.skill}) — {r.headline}", "", f"Picture: {context_text(r)}", "",
+             "| Category | Score | Verdict |", "|---|---|---|"]
     for k, c in r.categories.items():
         lines.append(f"| {CATEGORY_NAMES[k]} | {c.score} | {WORD[c.verdict]} |")
     if r.strengths:
@@ -104,6 +140,7 @@ def to_markdown(r: Rating, tool: str | None = None) -> str:
                 if tool and t.lower() != tool.lower():
                     continue
                 lines += ["", f"**{t}**", ""] + [f"1. {x}" for x in steps]
+            lines += _mask_lines(s.masks, tool)
             lines.append("")
     if r.capture:
         lines += ["## Next time at the telescope", ""] + [f"- {c}" for c in r.capture]
@@ -130,7 +167,8 @@ def to_html(r: Rating, images: dict[str, str] | None = None, accent: str = "#2a6
     </style></head><body>
     <h1>Rate my pic</h1>
     <p class="muted">{e(p.path.name)} · {p.width} × {p.height} · {e(p.format.upper())}
-    {e(p.bit_depth)} · judged as {e(r.skill)} · {APP_NAME} {__version__}</p>"""]
+    {e(p.bit_depth)} · judged as {e(r.skill)} · {APP_NAME} {__version__}<br>
+    Picture: {e(context_text(r))}</p>"""]
     if images and images.get("picture"):
         out.append(f'<p><img src="{images["picture"]}" width="640"></p>')
     out.append(f'<p><span class="verdict">{e(VERDICT_NAMES[r.verdict])}</span> &nbsp; '

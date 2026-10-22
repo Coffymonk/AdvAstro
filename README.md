@@ -54,8 +54,15 @@ does that.
    gradient removal, colour calibration, deconvolution, noise reduction, star separation,
    stretching and more. Each step says *why*, with your numbers, and changes with the target:
    a galaxy gets a different workflow from a nebula or a star cluster.
-4. **Rates finished pictures** (*Rate my pic*, see below): a verdict, scores per category,
-   every finding shown on the image, and a step-by-step plan to improve it.
+4. **Checks your calibration frames**: bias, darks, flats and flat darks, on their own and
+   against the lights (light leaks, amp glow, banding, hot pixels, flat brightness, dust,
+   matching settings). Double-click a frame for its full analysis and a hot-pixel map.
+5. **Rates finished pictures** (*Rate my pic*, see below): a verdict, scores per category,
+   every finding shown on the image, a step-by-step plan to improve it, and a processing
+   workflow for the object type.
+
+The window has three modes, as tabs under the toolbar: **Session**, **Calibration** and
+**Rate my pic**. Each keeps what it has loaded, so switching between them is instant.
 
 | Position source | What you get |
 | --- | --- |
@@ -77,9 +84,9 @@ does that.
 
 ## Rate my pic
 
-**Rate my pic** (toolbar, or Ctrl+R) opens a separate window for a *finished* picture, so the
-session you have loaded stays as it is. Open or drop a FITS, XISF, TIFF (8/16/32-bit), PNG,
-JPEG or WebP file and you get:
+**Rate my pic** (the third mode tab, or Ctrl+R) judges a *finished* picture; the session you
+have loaded stays as it is. Open or drop a FITS, XISF, TIFF (8/16/32-bit), PNG, JPEG or WebP
+file and you get:
 
 <p align="center">
   <img src="docs/images/rate-verdict.jpg" alt="Rate my pic: a verdict of Good, with fixable issues, score 88, category bars and the most important findings">
@@ -92,9 +99,17 @@ JPEG or WebP file and you get:
 - **Findings, shown on the picture.** Overlays for star size and shape across the field,
   the background model, noise, background colour, clipping, and problems such as dark star
   rings, hot pixels and uncropped edges.
+- **Judged for what it is.** The object type (galaxy, emission, reflection, planetary or dark
+  nebula, open or globular cluster, Milky Way field) comes from the plate solve or the name,
+  or you choose it; the verdict, findings and advice adapt to it. Starless pictures are
+  recognised and judged without the star checks.
 - **How to improve this image**: a plan ordered by impact, built from what was measured in
   this picture, with concrete steps for PixInsight and Siril (switching to BlurXTerminator,
-  NoiseXTerminator or StarXTerminator when you own them), plus what to change at the telescope.
+  NoiseXTerminator or StarXTerminator when you own them), step-by-step recipes for the masks
+  the steps use, and what to change at the telescope.
+- **A workflow for your target**: the whole processing route from the stacked master to the
+  finished picture, explained stage by stage for beginners, with what to watch for with this
+  kind of object, and the stages your picture needs most marked.
 - **Sky checks** (with a plate solution in the file, or ASTAP): the limiting magnitude
   against Gaia DR3, whether star colours follow their true Gaia colours, the target and its
   framing, and the same field from DSS2 or Pan-STARRS to slide or blink against your picture.
@@ -106,11 +121,22 @@ JPEG or WebP file and you get:
 <table>
   <tr>
     <td width="50%"><img src="docs/images/rate-stars-overlay.jpg" alt="Stars overlay: star shape and size across the field, region by region"></td>
-    <td width="50%"><img src="docs/images/rate-improve.jpg" alt="Improve tab: a plan ordered by impact, with PixInsight steps"></td>
+    <td width="50%"><img src="docs/images/rate-improve.jpg" alt="Improve tab: a plan ordered by impact, with PixInsight steps and a mask recipe"></td>
   </tr>
   <tr>
     <td align="center"><i>Findings drawn on the picture: star shape across the field</i></td>
     <td align="center"><i>A tailored plan to improve the picture</i></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/rate-workflow.jpg" alt="Workflow tab in Rate my pic: a processing route for an emission nebula, stage by stage, with the stages this picture needs marked"></td>
+    <td width="50%"><img src="docs/images/calibration-hot-pixels.jpg" alt="One dark frame in detail: a map of its hot pixels and an explanation of every measurement"></td>
+  </tr>
+  <tr>
+    <td align="center"><i>A processing workflow for the object type</i></td>
+    <td align="center"><i>A calibration frame in detail, with its hot-pixel map</i></td>
   </tr>
 </table>
 

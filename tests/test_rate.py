@@ -294,3 +294,68 @@ def test_pdf_report(good, tmp_path):
 
     out = write_pdf(rate(good), tmp_path / "r.pdf")
     assert out.read_bytes()[:4] == b"%PDF" and out.stat().st_size > 20_000
+
+
+# ---------------------------------------------------------------------------- object types
+def test_starless_pictures_are_recognised_and_skip_star_checks(tmp_path):
+    from scipy import ndimage as ndi
+
+    from advastro.rate.objects import looks_starless
+
+    rgb = finished(n_stars=900)
+    starless = np.stack([ndi.grey_opening(c, size=(9, 9)) for c in rgb])
+    path = save_tiff(tmp_path / "starless.tif", starless)
+    pic = load_picture(path)
+    m = measure(pic)
+    assert looks_starless(m)
+    r = judge(pic, m, {"skill": "intermediate"})
+    assert r.context.starless and "stars" not in r.categories
+    assert any(f.id == "starless" for f in r.findings)
+    assert not any(f.category == "stars" and f.id != "starless" for f in r.findings)
+    # A normal star field is not starless, and the choice can be overridden.
+    pic2 = load_picture(save_tiff(tmp_path / "stars.tif", rgb))
+    m2 = measure(pic2)
+    assert not looks_starless(m2)
+    forced = judge(pic2, m2, {}, starless="yes")
+    assert forced.context.starless and forced.context.starless_source == "manual"
+
+
+def test_object_type_changes_the_judgement(good):
+    pic = load_picture(good)
+    m = measure(pic)
+    plain = judge(pic, m, {})
+    assert plain.context.kind == "unknown"
+    named = judge(pic, m, {}, object_name="M 31")
+    assert named.context.kind == "galaxy" and named.context.kind_source == "name"
+    cluster = judge(pic, m, {}, object_kind="cluster")
+    assert cluster.context.kind == "cluster"
+    assert not any(f.id in ("muted", "low_contrast", "low_detail", "star_dominance")
+                   for f in cluster.findings)
+    neb = judge(pic, m, {}, object_name="NGC 7000")
+    assert neb.context.kind == "emission" and neb.context.fills_frame
+
+
+def test_target_workflow_and_mask_recipes(good):
+    from advastro.rate.judge import _load_tips, load_masks
+    from advastro.rate.workflow import target_workflow, workflow_markdown
+
+    masks = load_masks()
+    for key, entry in _load_tips().items():
+        for name in entry.get("masks", []):
+            assert name in masks, (key, name)
+    for m in masks.values():
+        assert m["pixinsight"] and m["siril"] and m["title"]
+    pic = load_picture(good)
+    meas = measure(pic)
+    for kind in ("galaxy", "emission", "cluster", "globular", "milkyway", "auto"):
+        r = judge(pic, meas, {}, object_kind=kind)
+        for tool in ("PixInsight", "Siril"):
+            wf = target_workflow(r, tool, ["BlurXTerminator"])
+            assert len(wf.stages) >= 8 and all(s.steps for s in wf.stages)
+            ids = [s.id for s in wf.stages]
+            if kind in ("cluster", "globular"):
+                assert "stars_off" not in ids and "cluster_stars" in ids
+            text = workflow_markdown(wf, tool)
+            assert "{" not in text, text[:200]
+    r = judge(pic, meas, {}, object_kind="galaxy", starless="yes")
+    assert "stars_on" not in [s.id for s in target_workflow(r).stages]

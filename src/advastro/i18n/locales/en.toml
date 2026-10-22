@@ -112,6 +112,7 @@ subtitle = "Advanced Astrophoto Analyzer measures every sub, flags the ones that
 choose = "Choose folder…"
 formats = "FITS and XISF files · camera raw files coming soon"
 recent = "Recent sessions"
+rate = "Rate a finished picture"
 
 [gui.summary]
 title = "Session"
@@ -177,6 +178,7 @@ no_files = "No supported image files were found in\n{folder}\n\nSupported: {form
 session = "Session"
 target = "Target"
 workflow = "Workflow"
+checks = "Checks"
 
 [gui.target]
 waiting = "The target is identified after the analysis."
@@ -269,6 +271,8 @@ programs = "Programs you use"
 paid = "Paid add-ons you own"
 aesthetic = "Colour style"
 skill = "Detail level"
+auto_cores = "Automatic ({cores} cores)"
+more_help = "More about this setting in the manual"
 
 [gui.settings.page]
 compare = "Compare"
@@ -356,6 +360,8 @@ clipped = "Clipped"
 noise = "Noise"
 hot = "Hot pixels"
 glow = "Amp glow"
+none_found = "No calibration frames were found next to these lights.\n\nAdvAstro looks for folders named BIAS, DARK, FLAT and FLAT DARK (or DARKFLAT) beside the lights folder. You can also open a folder that holds only darks, flats or bias."
+double_click = "Double-click a frame for its full analysis"
 
 [rate]
 credit = "Image: {source}"
@@ -411,6 +417,19 @@ astrobin_loading = "Loading AstroBin images…"
 astrobin_none = "AstroBin returned no images for this object."
 browser_text = "Open other images of {name} in your browser:"
 compare_off = "Comparisons are off. Add an AstroBin key or turn on the browser option in Settings › Compare."
+export_workflow = "Workflow as Markdown…"
+export_tip = "Save the report (PDF, Markdown, JSON) or the processing workflow"
+kind_label = "Object"
+starless_label = "Stars"
+kind_tip = "What the picture shows. Automatic uses the plate solve or the object's name; choose it yourself if it is wrong. The verdict, findings, plan and workflow adapt to it."
+starless_tip = "Starless pictures (made with StarNet or StarXTerminator) skip the star checks. Automatic detects them."
+judged_for = "Judged as: {what}"
+kind_unknown = "object type not known (choose it for tailored advice)"
+starless_detected = "starless (detected)"
+kind_pick = "Choose the object type"
+mask_how = "How to make the mask"
+wf_yours = "Your image"
+wf_note = "For this object"
 
 [rate.tab]
 verdict = "Verdict"
@@ -418,6 +437,7 @@ findings = "Findings"
 improve = "Improve"
 compare = "Compare"
 details = "Details"
+workflow = "Workflow"
 
 [rate.overlay]
 none = "Picture"
@@ -555,3 +575,110 @@ rate = "Rate my pic"
 shortcuts = "Keyboard shortcuts"
 faq = "Troubleshooting"
 about = "About Advanced Astrophoto Analyzer"
+
+[gui.mode]
+session = "Session"
+calibration = "Calibration"
+rate = "Rate my pic"
+
+[gui.mode_tip]
+session = "The lights: every sub measured, keep or reject, target and workflow (Ctrl+1)"
+calibration = "Bias, darks, flats and flat darks next to the lights, checked on their own and against the lights (Ctrl+2)"
+rate = "Judge a finished picture: verdict, findings, improvement plan and workflow (Ctrl+3 or Ctrl+R)"
+
+[gui.settings.explain]
+strictness = "A preset for the four limits below. Lenient keeps more subs, Strict keeps only the best."
+fwhm = "Rejects subs whose stars are much larger than the session's typical size (blur, focus drift, poor seeing). Lower = stricter."
+ecc = "Rejects subs whose stars are stretched (wind, guiding errors). 0 is perfectly round; 0.6 is clearly oval (about 25 % longer than wide). Lower = stricter."
+stars = "Rejects subs with too few stars compared with the session's typical count (clouds, haze, dew). Higher = stricter."
+sky = "Rejects subs with a much brighter sky than the rest (Moon, clouds lit by town light, dawn). Lower = stricter."
+
+[gui.calinfo]
+close = "Close"
+manual = "What these checks mean (manual)"
+master = "master frame"
+settings = "Settings"
+measured = "Measured"
+offset = "Offset"
+temp = "Temperature"
+binning = "Binning"
+size = "Size"
+banding = "Banding"
+channels = "Colour channels (R / G / B)"
+not_flagged = "This frame is like the rest of its set."
+frame_legend = "The frame with an automatic stretch, so faint patterns (glow, banding, dust) are visible. Wheel to zoom, drag to pan."
+hot_legend = "Every hot pixel as a dot: yellow ones are just above the limit, red and larger ones are much brighter. The numbers count the hot pixels in each ninth of the sensor."
+hot_title = "Hot pixels"
+hot_loading = "Reading the frame to map the hot pixels…"
+hot_numbers = "<b>{count}</b> hot pixels ({share} % of the sensor), each more than 10 times the noise ({noise} ADU) above its surroundings. <b>{strong}</b> of them are very strong (more than 50 times the noise). Another <b>{warm}</b> warm pixels sit between 5 and 10 times the noise."
+hot_what = "A hot pixel collects heat signal (dark current) much faster than its neighbours, so it shows as a bright dot in every light frame, in the same place. Every sensor has some; the number grows with exposure time and roughly doubles for every 6–7 °C warmer the sensor is. Darks record them so they can be subtracted, and dithering plus pixel rejection in stacking removes the rest."
+hot_even = "They are spread evenly over the sensor (the busiest ninth, {where}, has {ratio}× the average): normal sensor defects."
+hot_cluster = "They cluster towards the {where} ({ratio}× the average there). That usually means a warm part of the sensor: amp glow or the readout electronics. Matching darks remove it, but avoid dark scaling."
+hot_vs_high = "This frame has {ratio}× as many as the set's median ({median}). A frame with clearly more hot pixels was taken warmer or longer than the rest; check its temperature and exposure."
+hot_vs_low = "This frame has only {ratio}× the set's median ({median}). Fewer hot pixels than the rest usually means a shorter exposure or a colder sensor than the others."
+hot_vs_same = "About the same as the rest of the set (median {median}), as it should be."
+hot_temp = "Taken at {temp} °C. Darks only match lights taken at the same temperature (within about 2 °C), exposure, gain and offset."
+hot_todo_title = "What to do"
+hot_todo = "Use darks that match the lights. Dither every 1–3 subs while imaging, so hot pixels land on different parts of the sky and are rejected when stacking. Turn on cosmetic correction (WBPP's CosmeticCorrection, or Siril's cosmetic correction from the master dark) for those that remain. A count that grows a lot from one season to the next is worth noting: sensors age."
+gain = "Gain"
+
+[gui.calinfo.region]
+upper_left = "upper left"
+top = "top"
+upper_right = "upper right"
+left = "left edge"
+centre = "centre"
+right = "right edge"
+lower_left = "lower left"
+bottom = "bottom"
+lower_right = "lower right"
+
+[gui.calinfo.col]
+what = "Measurement"
+this = "This frame"
+set = "Set median"
+
+[gui.calinfo.view]
+frame = "Frame"
+hot = "Hot pixel map"
+
+[gui.calinfo.why]
+level = "The average level. In darks and bias it must be the same in every frame; a higher level means light got in or the offset differs."
+noise = "Read noise plus heat noise. A frame noisier than the rest was warmer, longer or disturbed."
+hot = "Pixels more than 10× the noise above their surroundings. See the section below."
+banding = "Strength of row or column stripes. More frames in the master average them out."
+level_pct = "Brightness as a share of full scale. Aim for 30–60 %; under 15 % is too dim, over 75 % may not be linear."
+clipped = "Share of pixels at the top of the scale. Any clipping means the flat cannot correct those pixels."
+vignetting = "How much less light the corners get than the centre. Not a fault; it is what flats correct."
+dust = "Round dust shadows found. Flats correct them if nothing moved between lights and flats."
+channels = "Each colour's brightness as a share of full scale. Keep the dimmest above about 10 %."
+glow = "How much brighter the brightest edge or corner is than the centre: amp glow from the sensor's electronics. None found here."
+glow_where = "How much brighter the brightest edge or corner (here the {where}) is than the centre: amp glow from the sensor's electronics."
+
+[rate.kind]
+auto = "Automatic"
+unknown = "Not known"
+galaxy = "Galaxy"
+emission = "Emission nebula"
+reflection = "Reflection nebula"
+planetary = "Planetary nebula"
+dark = "Dark nebula"
+cluster = "Open cluster"
+globular = "Globular cluster"
+milkyway = "Milky Way / wide field"
+
+[rate.kind_source]
+solve = "from the plate solve"
+name = "from the name"
+header = "from the file"
+none = ""
+manual = ""
+
+[rate.starless]
+auto = "Automatic"
+yes = "Starless"
+no = "With stars"
+
+[rate.wf_phase]
+linear = "Linear data (before the stretch)"
+stretched = "After the stretch"

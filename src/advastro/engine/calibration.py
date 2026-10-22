@@ -169,6 +169,47 @@ def _dark_like(m: CalMetrics, data: np.ndarray) -> None:
     m.banding_adu = band
 
 
+@dataclass
+class HotPixelDetails:
+    """Where the hot pixels are and how strong, for the frame detail dialog."""
+
+    count: int                      # more than 10x the noise above the surroundings
+    warm: int                       # 5–10x the noise: weaker, but still visible after a stretch
+    share_pct: float
+    xs: np.ndarray                  # positions of the hot pixels (capped at 20,000)
+    ys: np.ndarray
+    strength: np.ndarray            # how far above the surroundings, in units of the noise
+    grid: np.ndarray                # 3x3 counts: where on the sensor they cluster
+    noise: float
+    width: int
+    height: int
+
+
+def hot_pixel_details(data: np.ndarray) -> HotPixelDetails:
+    """The same test as the table's Hot px column, with positions and strengths."""
+    data = data if data.ndim == 2 else data.mean(axis=0)
+    _, noise = _robust_noise(data)
+    block = 32
+    h, w = (data.shape[0] // block) * block, (data.shape[1] // block) * block
+    local = np.median(data[:h, :w].reshape(h // block, block, w // block, block)
+                      .transpose(0, 2, 1, 3).reshape(h // block, w // block, -1), axis=2)
+    background = np.repeat(np.repeat(local, block, axis=0), block, axis=1)
+    lift = (data[:h, :w] - background) / max(noise, 1e-6)
+    hot = lift > max(10.0, 1.0 / max(noise, 1e-6))
+    warm = int(np.count_nonzero((lift > 5.0) & ~hot))
+    ys, xs = np.nonzero(hot)
+    strength = lift[ys, xs]
+    order = np.argsort(strength)[::-1][:20000]
+    grid = np.zeros((3, 3), int)
+    if ys.size:
+        gy = np.clip(ys * 3 // h, 0, 2)
+        gx = np.clip(xs * 3 // w, 0, 2)
+        np.add.at(grid, (gy, gx), 1)
+    return HotPixelDetails(int(ys.size), warm, ys.size / data.size * 100.0, xs[order],
+                           ys[order], strength[order], grid, float(noise), int(data.shape[1]),
+                           int(data.shape[0]))
+
+
 def _superpixels(frame: Frame) -> np.ndarray:
     """(channels, h, w): R, G, B superpixels for colour data, one plane for mono."""
     data = frame.data

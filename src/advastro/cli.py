@@ -87,6 +87,14 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="only show steps for this program")
     r.add_argument("--skill", choices=["beginner", "intermediate", "advanced"],
                    help="judge at this level (default: from your settings)")
+    r.add_argument("--type", dest="object_type", default="auto",
+                   choices=["auto", "galaxy", "emission", "reflection", "planetary", "dark",
+                            "cluster", "globular", "milkyway"],
+                   help="object type (default: from the name or the plate solve)")
+    r.add_argument("--starless", choices=["auto", "yes", "no"], default="auto",
+                   help="is the picture starless? (default: detect)")
+    r.add_argument("--workflow", action="store_true",
+                   help="print the processing workflow for the object type instead")
     config_args(r)
 
     d = sub.add_parser("astap", help="show where ASTAP and its star databases were found")
@@ -345,8 +353,15 @@ def cmd_rate(args, cfg) -> int:
         sky = sky_checks(pic, m, cfg, args.object, want_survey=bool(args.pdf))
         for k, v in sky.errors.items():
             print(f"{k}: {v}", file=sys.stderr)
-    rating = judge(pic, m, profile, sky)
-    if args.format == "json":
+    rating = judge(pic, m, profile, sky, object_kind=args.object_type, starless=args.starless,
+                   object_name=args.object)
+    if args.workflow:
+        from advastro.rate.workflow import target_workflow, workflow_markdown
+
+        tool = {"pixinsight": "PixInsight", "siril": "Siril"}[args.tool or "pixinsight"]
+        text = workflow_markdown(target_workflow(rating, tool, profile.get("paid_addons", [])),
+                                 tool)
+    elif args.format == "json":
         text = report.to_json(rating)
     elif args.format == "markdown":
         text = report.to_markdown(rating, args.tool)
@@ -378,12 +393,13 @@ def cmd_rate(args, cfg) -> int:
 def _render_rating(r, tool: str | None) -> str:
     import textwrap
 
-    from advastro.rate.report import CATEGORY_NAMES, SEVERITY, VERDICT_NAMES, WORD
+    from advastro.rate.report import CATEGORY_NAMES, SEVERITY, VERDICT_NAMES, WORD, context_text
 
     p = r.picture
     out = io.StringIO()
     out.write(f"{p.path.name}  ({p.width} x {p.height}, {p.format.upper()} {p.bit_depth})\n\n")
     out.write(f"  {VERDICT_NAMES[r.verdict].upper()}  {r.score}/100  (judged as {r.skill})\n")
+    out.write(f"  Picture: {context_text(r)}\n")
     out.write(f"  {r.headline}\n\n")
     for k, c in r.categories.items():
         bar = "#" * (c.score // 5) + "." * (20 - c.score // 5)
@@ -409,6 +425,8 @@ def _render_rating(r, tool: str | None) -> str:
                 out.write(f"     {name}:\n")
                 for x in steps:
                     out.write(f"       - {x}\n")
+            if s.masks:
+                out.write(f"     Masks: {', '.join(s.masks)} (see the Markdown report)\n")
     if r.capture:
         out.write("\nNext time at the telescope\n")
         for c in r.capture:

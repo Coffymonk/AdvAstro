@@ -30,12 +30,15 @@ It **never changes your files** and **never stacks or processes images**. Your o
 <!-- id: intro.tour -->
 ## A quick tour
 
-- **Main window**: open a session folder. The table lists every sub (and, in tabs above it,
-  your calibration frames). On the right are a preview and three tabs: **Session** (summary
-  and anything that needs attention), **Target** (what you imaged) and **Workflow** (how to
-  process it).
-- **Rate my pic** (toolbar, Ctrl+R): a separate window for finished pictures. Your loaded
-  session stays as it is.
+- **Three modes**, as tabs under the toolbar. Each keeps what it has loaded, and the
+  toolbar shows that mode's tools:
+    - **Session** (Ctrl+1): open a session folder. The table lists every sub. On the right are
+      a preview and three tabs: **Session** (summary and anything that needs attention),
+      **Target** (what you imaged) and **Workflow** (how to process it).
+    - **Calibration** (Ctrl+2): the bias, darks, flats and flat darks found next to the
+      lights, with every check. Double-click a frame for its full analysis.
+    - **Rate my pic** (Ctrl+3 or Ctrl+R): judge a finished picture, with a plan to improve
+      it and a workflow for the object.
 - **Settings** (Ctrl+,): your equipment, how strict sub selection is, plate solving, the
   programs you use, your style and comparisons.
 - **Help** (F1): this manual. F1 opens the section about what you are looking at.

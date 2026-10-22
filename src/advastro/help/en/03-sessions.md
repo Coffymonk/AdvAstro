@@ -4,10 +4,12 @@
 <!-- id: session.window -->
 ## The main window
 
+- **Mode tabs** under the toolbar: *Session* (this chapter), *Calibration* (the
+  [calibration frames](help:calibration)) and *Rate my pic* ([finished pictures](help:rate)).
+  Each keeps what it has loaded; the tab shows a count, and a warning sign when something
+  is flagged. Ctrl+1, Ctrl+2 and Ctrl+3 switch between them.
 - **Toolbar**: *Open*, *Analyze* (again), *Stop*, *Solve*, *Suggested*, *Export*, and on the
-  right *Rate my pic*, *Settings*, *Night* and *Help*.
-- **Frame tabs** above the table: *Lights* and, when found, *Darks*, *Flats*, *Flat darks*
-  and *Bias*, each with a count and a warning sign when something is flagged.
+  right *Settings*, *Night* and *Help*. The tools change with the mode.
 - **Table**: one row per file. Click a row to preview it.
 - **Filter** buttons above the table: *All*, *Flagged*, *Rejected*.
 - **Preview**: the selected file with an automatic stretch. Mouse wheel zooms, drag pans,

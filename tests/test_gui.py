@@ -72,12 +72,12 @@ def test_open_analyze_keep_export(qapp, session, tmp_path):
     w.close()
 
 
-def test_rate_window_rates_a_picture_and_exports(qapp, tmp_path):
+def test_rate_page_rates_a_picture_and_exports(qapp, tmp_path):
     import numpy as np
     import tifffile
 
     from advastro.config import load_config
-    from advastro.gui.rate_window import RateWindow
+    from advastro.gui.rate_window import RatePage
     from advastro.gui.theme import DARK
 
     rgb = np.stack([star_field(shape=(400, 600), n_stars=300, background=6000.0, noise=300.0,
@@ -86,32 +86,48 @@ def test_rate_window_rates_a_picture_and_exports(qapp, tmp_path):
     tifffile.imwrite(path, (np.moveaxis(rgb, 0, -1) * 65535).astype(np.uint16))
     cfg = load_config(use_user_config=False)
     cfg.values["compare"]["auto_sky"] = False
-    win = RateWindow(cfg, DARK)
-    win.show()
-    win.open_picture(path)
+    page = RatePage(cfg, DARK)
+    page.show()
+    page.open_picture(path)
     for _ in range(300):
         _pump(50)
-        if win.rating is not None and win._worker is None:
+        if page.rating is not None and page._worker is None:
             break
-    assert win.rating is not None
-    assert win.preview_image is not None and not win.preview_image.isNull()
+    assert page.rating is not None
+    assert page.preview_image is not None and not page.preview_image.isNull()
     for key in ("stars", "background", "noise", "cast", "clipping", "problems", "none"):
-        win.set_overlay(key)
-    win.object_edit.setText("M42")
-    win._render_compare()
+        page.set_overlay(key)
+    page.object_edit.setText("M42")
+    page._object_name_changed()
+    assert page.rating.context.kind == "emission"           # M42 from the catalogue
+    page.kind_combo.setCurrentIndex(page.kind_combo.findData("cluster"))
+    assert page.rating.context.kind == "cluster"
+    page.stars_combo.setCurrentIndex(page.stars_combo.findData("yes"))
+    assert page.rating.context.starless
+    assert not any(f.category == "stars" and f.id != "starless" for f in page.rating.findings)
+    page.set_tool("siril")
+    page.tabs.setCurrentIndex(3)
+    assert page.help_topic() == "rate.workflow"
     out = tmp_path / "r.json"
     from advastro.rate.report import to_json
 
-    out.write_text(to_json(win.rating))
+    out.write_text(to_json(page.rating))
     assert '"kind": "rate-my-pic"' in out.read_text()
-    win.close()
+    page.shutdown()
+    page.close()
 
 
-def test_main_window_opens_rate_window(qapp):
+def test_main_window_modes(qapp):
     w = MainWindow()
     w.open_rate()
-    assert w.rate_window.isVisible()
-    w.rate_window.close()
+    assert w.mode == "rate" and w.stack.currentWidget() is w.rate_page
+    assert all(a.isVisible() for a in w.tb_rate)
+    assert not any(a.isVisible() for a in w.tb_session)
+    assert w.help_topic() == "rate"
+    w.set_mode("calibration")
+    assert w.stack.currentWidget() is w.start            # nothing loaded yet
+    w.set_mode("session")
+    assert w.tb_solve.isVisible() and not w.tb_rate[0].isVisible()
     w.close()
 
 

@@ -5,9 +5,11 @@ AdvAstro kontrollerar bias, darks, flats och flat darks som ligger bredvid ljusb
 för sig och mot ljusbilderna. Stäng av det under
 [Inställningar › Bildurval](help:settings.selection) om du vill.
 
-Varje typ får en egen flik ovanför tabellen, och fliken Session listar alla kontroller.
-Klicka på en flaggad fil i listan för att markera den i tabellen. Avvikande bilder bockas
-av i det föreslagna urvalet, precis som delbilder.
+Kalibreringsbilderna har ett eget läge: fliken **Kalibrering** under verktygsfältet
+(Ctrl+2). Varje typ får en egen flik ovanför tabellen, och fliken *Kontroller* till höger
+listar alla kontroller. Klicka på en flaggad fil i listan för att markera den i tabellen.
+Avvikande bilder bockas av i det föreslagna urvalet, precis som delbilder.
+**Dubbelklicka på en bild** för att se [allt om den](help:calibration.details).
 
 Ny på kalibreringsbilder? Börja med [varför de behövs](help:calibration.why). Varje
 kontroll nedan berättar vad som mäts, varför det spelar roll, när AdvAstro varnar och vad du
@@ -341,6 +343,23 @@ filerna för hand eller rätta typen i headern.
 
 Resultaten används i [arbetsflödet](help:workflow): till exempel hur flats ska kalibreras och
 om darks ska optimeras.
+
+<!-- id: calibration.details -->
+## En bild i detalj
+
+Dubbelklicka på en bild i tabellen för att öppna dess analys i ett eget fönster:
+
+- **Bilden** med automatisk sträckning, så att svaga mönster som amp glow, rander och damm
+  syns. För darks, bias och flat darks visar **Karta över heta pixlar** varje het pixel som en
+  prick (gul strax över gränsen, röd och större när den är mycket ljusare) och räknar dem i
+  varje niondel av sensorn.
+- **Varför den flaggades**, om den gjorde det, med enkla ord.
+- **Inställningar**: exponering, gain, offset, temperatur, binning och storlek.
+- **Mätt**: varje värde bredvid uppsättningens median, med vad det betyder.
+- **Heta pixlar** (darks, bias, flat darks): hur många de är och hur starka (över 10 gånger
+  bruset, mycket starka över 50 gånger, och *varma* pixlar mellan 5 och 10 gånger), om de är
+  jämnt fördelade eller samlas mot en varm del av sensorn, hur bilden står sig mot resten av
+  uppsättningen, och vad du gör åt dem.
 
 <!-- id: calibration.glossary -->
 ## Ordlista

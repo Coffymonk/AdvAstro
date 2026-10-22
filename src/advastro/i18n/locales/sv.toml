@@ -112,6 +112,7 @@ subtitle = "Advanced Astrophoto Analyzer mäter varje bild, flaggar de som avvik
 choose = "Välj mapp…"
 formats = "FITS- och XISF-filer · kamerans råfiler kommer snart"
 recent = "Senaste sessioner"
+rate = "Betygsätt en färdig bild"
 
 [gui.summary]
 title = "Session"
@@ -177,6 +178,7 @@ no_files = "Inga bildfiler som stöds hittades i\n{folder}\n\nStöds: {formats}"
 session = "Session"
 target = "Objekt"
 workflow = "Arbetsflöde"
+checks = "Kontroller"
 
 [gui.target]
 waiting = "Objektet identifieras efter analysen."
@@ -269,6 +271,8 @@ programs = "Program du använder"
 paid = "Betalda tillägg du äger"
 aesthetic = "Färgstil"
 skill = "Detaljnivå"
+auto_cores = "Automatiskt ({cores} kärnor)"
+more_help = "Mer om inställningen i manualen"
 
 [gui.settings.page]
 compare = "Jämför"
@@ -356,6 +360,8 @@ clipped = "Klippta"
 noise = "Brus"
 hot = "Heta pixlar"
 glow = "Amp glow"
+none_found = "Inga kalibreringsbilder hittades bredvid de här ljusbilderna.\n\nAdvAstro letar efter mappar som heter BIAS, DARK, FLAT och FLAT DARK (eller DARKFLAT) bredvid ljusbildsmappen. Du kan också öppna en mapp som bara innehåller darks, flats eller bias."
+double_click = "Dubbelklicka på en bild för hela analysen"
 
 [rate]
 credit = "Bild: {source}"
@@ -411,6 +417,19 @@ astrobin_loading = "Hämtar AstroBin-bilder…"
 astrobin_none = "AstroBin hade inga bilder av det här objektet."
 browser_text = "Öppna andra bilder av {name} i webbläsaren:"
 compare_off = "Jämförelser är avstängda. Lägg till en AstroBin-nyckel eller slå på webbläsaralternativet under Inställningar › Jämför."
+export_workflow = "Arbetsflöde som Markdown…"
+export_tip = "Spara rapporten (PDF, Markdown, JSON) eller arbetsflödet"
+kind_label = "Objekt"
+starless_label = "Stjärnor"
+kind_tip = "Vad bilden visar. Automatiskt använder plattlösningen eller objektets namn; välj själv om det blir fel. Omdöme, fynd, plan och arbetsflöde anpassas efter det."
+starless_tip = "Stjärnlösa bilder (gjorda med StarNet eller StarXTerminator) hoppar över stjärnkontrollerna. Automatiskt känner igen dem."
+judged_for = "Bedömd som: {what}"
+kind_unknown = "objekttyp okänd (välj den för anpassade råd)"
+starless_detected = "stjärnlös (upptäckt)"
+kind_pick = "Välj objekttyp"
+mask_how = "Så gör du masken"
+wf_yours = "Din bild"
+wf_note = "För det här objektet"
 
 [rate.tab]
 verdict = "Omdöme"
@@ -418,6 +437,7 @@ findings = "Fynd"
 improve = "Förbättra"
 compare = "Jämför"
 details = "Detaljer"
+workflow = "Arbetsflöde"
 
 [rate.overlay]
 none = "Bild"
@@ -555,3 +575,110 @@ rate = "Betygsätt min bild"
 shortcuts = "Kortkommandon"
 faq = "Felsökning"
 about = "Om Advanced Astrophoto Analyzer"
+
+[gui.mode]
+session = "Session"
+calibration = "Kalibrering"
+rate = "Betygsätt min bild"
+
+[gui.mode_tip]
+session = "Ljusbilderna: varje delbild mätt, behåll eller välj bort, objekt och arbetsflöde (Ctrl+1)"
+calibration = "Bias, darks, flats och flat darks bredvid ljusbilderna, kontrollerade var för sig och mot ljusbilderna (Ctrl+2)"
+rate = "Bedöm en färdig bild: omdöme, fynd, förbättringsplan och arbetsflöde (Ctrl+3 eller Ctrl+R)"
+
+[gui.settings.explain]
+strictness = "En förinställning för de fyra gränserna nedan. Mild behåller fler delbilder, Sträng bara de bästa."
+fwhm = "Väljer bort delbilder vars stjärnor är mycket större än sessionens typiska storlek (oskärpa, fokusdrift, dålig seeing). Lägre = striktare."
+ecc = "Väljer bort delbilder med utdragna stjärnor (vind, guidningsfel). 0 är helt runt; 0,6 är tydligt ovalt (ungefär 25 % längre än brett). Lägre = striktare."
+stars = "Väljer bort delbilder med för få stjärnor jämfört med sessionens typiska antal (moln, dis, dagg). Högre = striktare."
+sky = "Väljer bort delbilder med mycket ljusare himmel än resten (månen, moln som lyses upp av stadsljus, gryning). Lägre = striktare."
+
+[gui.calinfo]
+close = "Stäng"
+manual = "Vad kontrollerna betyder (manualen)"
+master = "masterbild"
+settings = "Inställningar"
+measured = "Mätt"
+offset = "Offset"
+temp = "Temperatur"
+binning = "Binning"
+size = "Storlek"
+banding = "Rander"
+channels = "Färgkanaler (R / G / B)"
+not_flagged = "Bilden är som resten av sin uppsättning."
+frame_legend = "Bilden med automatisk sträckning, så att svaga mönster (glöd, rander, damm) syns. Scrolla för att zooma, dra för att panorera."
+hot_legend = "Varje het pixel som en prick: gula ligger strax över gränsen, röda och större är mycket ljusare. Talen räknar de heta pixlarna i varje niondel av sensorn."
+hot_title = "Heta pixlar"
+hot_loading = "Läser bilden för att kartlägga de heta pixlarna…"
+hot_numbers = "<b>{count}</b> heta pixlar ({share} % av sensorn), var och en mer än 10 gånger bruset ({noise} ADU) över sin omgivning. <b>{strong}</b> av dem är mycket starka (mer än 50 gånger bruset). Ytterligare <b>{warm}</b> varma pixlar ligger mellan 5 och 10 gånger bruset."
+hot_what = "En het pixel samlar värmesignal (mörkerström) mycket snabbare än sina grannar, så den syns som en ljus prick i varje ljusbild, på samma ställe. Alla sensorer har några; antalet växer med exponeringstiden och ungefär fördubblas för varje 6–7 °C varmare sensor. Darks fångar dem så att de kan dras ifrån, och dithering plus avvisning vid staplingen tar bort resten."
+hot_even = "De är jämnt fördelade över sensorn (den tätaste niondelen, {where}, har {ratio}× genomsnittet): vanliga sensordefekter."
+hot_cluster = "De samlas mot {where} ({ratio}× genomsnittet där). Det betyder oftast en varm del av sensorn: amp glow eller utläsningselektroniken. Matchande darks tar bort det, men undvik dark-skalning."
+hot_vs_high = "Bilden har {ratio}× så många som uppsättningens median ({median}). En bild med tydligt fler heta pixlar togs varmare eller längre än resten; kontrollera temperatur och exponering."
+hot_vs_low = "Bilden har bara {ratio}× uppsättningens median ({median}). Färre heta pixlar än resten betyder oftast kortare exponering eller kallare sensor än de andra."
+hot_vs_same = "Ungefär som resten av uppsättningen (median {median}), som det ska vara."
+hot_temp = "Tagen vid {temp} °C. Darks stämmer bara med ljusbilder tagna vid samma temperatur (inom ungefär 2 °C), exponering, gain och offset."
+hot_todo_title = "Vad du gör"
+hot_todo = "Använd darks som matchar ljusbilderna. Dithra var 1–3:e delbild när du fotograferar, så att heta pixlar hamnar på olika delar av himlen och avvisas vid staplingen. Slå på kosmetisk korrigering (CosmeticCorrection i WBPP, eller Sirils kosmetiska korrigering från masterdarken) för de som blir kvar. Ett antal som växer kraftigt från en säsong till nästa är värt att notera: sensorer åldras."
+gain = "Gain"
+
+[gui.calinfo.region]
+upper_left = "övre vänstra hörnet"
+top = "överkanten"
+upper_right = "övre högra hörnet"
+left = "vänsterkanten"
+centre = "mitten"
+right = "högerkanten"
+lower_left = "nedre vänstra hörnet"
+bottom = "nederkanten"
+lower_right = "nedre högra hörnet"
+
+[gui.calinfo.col]
+what = "Mätning"
+this = "Den här bilden"
+set = "Uppsättningens median"
+
+[gui.calinfo.view]
+frame = "Bild"
+hot = "Karta över heta pixlar"
+
+[gui.calinfo.why]
+level = "Medelnivån. I darks och bias ska den vara lika i alla bilder; en högre nivå betyder att ljus kommit in eller att offset skiljer."
+noise = "Utläsningsbrus plus värmebrus. En bild med mer brus än resten var varmare, längre eller störd."
+hot = "Pixlar mer än 10× bruset över sin omgivning. Se avsnittet nedan."
+banding = "Styrkan på rad- eller kolumnränder. Fler bilder i mastern jämnar ut dem."
+level_pct = "Ljusstyrka som andel av full skala. Sikta på 30–60 %; under 15 % är för mörkt, över 75 % kan vara olinjärt."
+clipped = "Andel pixlar i toppen av skalan. All klippning betyder att flatten inte kan rätta de pixlarna."
+vignetting = "Hur mycket mindre ljus hörnen får än mitten. Inget fel; det är det dina flats rättar."
+dust = "Runda dammskuggor som hittades. Dina flats rättar dem om inget rörts mellan ljusbilder och flats."
+channels = "Varje färgs ljusstyrka som andel av full skala. Håll den mörkaste över ungefär 10 %."
+glow = "Hur mycket ljusare den ljusaste kanten eller hörnet är än mitten: amp glow från sensorns elektronik. Ingen hittades här."
+glow_where = "Hur mycket ljusare den ljusaste kanten eller hörnet (här {where}) är än mitten: amp glow från sensorns elektronik."
+
+[rate.kind]
+auto = "Automatiskt"
+unknown = "Okänt"
+galaxy = "Galax"
+emission = "Emissionsnebulosa"
+reflection = "Reflektionsnebulosa"
+planetary = "Planetarisk nebulosa"
+dark = "Mörk nebulosa"
+cluster = "Öppen stjärnhop"
+globular = "Klotformig stjärnhop"
+milkyway = "Vintergatan / vidfält"
+
+[rate.kind_source]
+solve = "från plattlösningen"
+name = "från namnet"
+header = "från filen"
+none = ""
+manual = ""
+
+[rate.starless]
+auto = "Automatiskt"
+yes = "Stjärnlös"
+no = "Med stjärnor"
+
+[rate.wf_phase]
+linear = "Linjär data (före sträckningen)"
+stretched = "Efter sträckningen"

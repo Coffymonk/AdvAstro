@@ -31,12 +31,16 @@ eget program (PixInsight, Siril med flera); AdvAstro talar om hur.
 <!-- id: intro.tour -->
 ## En snabb rundtur
 
-- **Huvudfönstret**: öppna en sessionsmapp. Tabellen visar varje delbild (och, i flikar
-  ovanför, kalibreringsbilderna). Till höger finns en förhandsvisning och tre flikar:
-  **Session** (sammanfattning och det som behöver uppmärksamhet), **Objekt** (vad du
-  fotograferat) och **Arbetsflöde** (hur du bearbetar det).
-- **Betygsätt bild** (verktygsfältet, Ctrl+R): ett eget fönster för färdiga bilder. Den
-  inlästa sessionen ligger kvar som den är.
+- **Tre lägen**, som flikar under verktygsfältet. Vart och ett behåller det som laddats, och
+  verktygsfältet visar det lägets verktyg:
+    - **Session** (Ctrl+1): öppna en sessionsmapp. Tabellen visar varje delbild. Till höger
+      finns en förhandsvisning och tre flikar: **Session** (sammanfattning och det som behöver
+      uppmärksamhet), **Objekt** (vad du fotograferat) och **Arbetsflöde** (hur du bearbetar
+      det).
+    - **Kalibrering** (Ctrl+2): bias, darks, flats och flat darks som hittats bredvid
+      ljusbilderna, med alla kontroller. Dubbelklicka på en bild för hela analysen.
+    - **Betygsätt min bild** (Ctrl+3 eller Ctrl+R): bedöm en färdig bild, med en plan för att
+      förbättra den och ett arbetsflöde för objektet.
 - **Inställningar** (Ctrl+,): din utrustning, hur strikt urvalet är, plattlösning, dina
   program, din stil och jämförelser.
 - **Hjälp** (F1): den här manualen. F1 öppnar avsnittet om det du tittar på.

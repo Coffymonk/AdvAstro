@@ -184,6 +184,13 @@ def stylesheet(t: Theme) -> str:
                     border: 0; border-bottom: 2px solid transparent; font-weight: 600; }}
     QTabBar::tab:hover {{ color: {t.text}; }}
     QTabBar::tab:selected {{ color: {t.text}; border-bottom: 2px solid {t.accent}; }}
+    /* Mode tabs (Session / Calibration / Rate my pic) under the toolbar */
+    QWidget#modeBar {{ background: {t.bg}; border-bottom: 1px solid {t.border}; }}
+    QTabBar#modes {{ background: {t.bg}; }}
+    QTabBar#modes::tab {{ padding: 8px 18px 9px 18px; font-size: 10.5pt; margin-right: 4px;
+                          border-bottom: 3px solid transparent; }}
+    QTabBar#modes::tab:selected {{ border-bottom: 3px solid {t.accent}; }}
+    QTabBar#modes::tab:disabled {{ color: {t.faint}; }}
     QScrollArea {{ background: {t.surface}; border: 0; }}
     QScrollArea > QWidget > QWidget {{ background: {t.surface}; }}
 
@@ -196,7 +203,7 @@ def stylesheet(t: Theme) -> str:
     QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {{
         background: {t.raised}; color: {t.text}; border: 1px solid {t.border};
         border-radius: 7px; padding: 6px 8px; min-height: 18px;
-        selection-background-color: {t.selection}; }}
+        selection-background-color: {t.selection}; selection-color: {t.text}; }}
     QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
         border-color: {t.accent}; }}
     QComboBox::drop-down {{ border: 0; width: 26px; }}
@@ -206,7 +213,8 @@ def stylesheet(t: Theme) -> str:
     QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {{ image: url("{down}"); width: 10px;
                                                         height: 10px; }}
     QComboBox QAbstractItemView {{ background: {t.raised}; border: 1px solid {t.border};
-        selection-background-color: {t.selection}; outline: 0; padding: 4px; }}
+        selection-background-color: {t.selection}; selection-color: {t.text}; outline: 0;
+        padding: 4px; }}
     QSpinBox::up-button, QSpinBox::down-button,
     QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {{ width: 18px; border: 0;
                                                               background: transparent; }}

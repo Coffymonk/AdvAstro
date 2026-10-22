@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from PySide6.QtCore import QSize, Qt, QUrl, Signal
@@ -20,7 +21,6 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QPushButton,
-    QSpinBox,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -65,6 +65,27 @@ def _page(title: str, intro: str) -> tuple[QWidget, QVBoxLayout]:
     lay.addWidget(_hint(intro))
     lay.addSpacing(6)
     return page, lay
+
+
+def _explained(widget: QWidget, hint: str, topic: str, parent) -> QWidget:
+    """A field with a one-line explanation under it and a '?' that opens the manual."""
+    box = QWidget()
+    v = QVBoxLayout(box)
+    v.setContentsMargins(0, 0, 0, 2)
+    v.setSpacing(3)
+    row = QHBoxLayout()
+    row.setSpacing(6)
+    row.addWidget(widget, 1)
+    q = QPushButton("?")
+    q.setObjectName("link")
+    q.setFixedWidth(22)
+    q.setCursor(Qt.CursorShape.PointingHandCursor)
+    q.setToolTip(tr("gui.settings.more_help"))
+    q.clicked.connect(lambda: show_help(topic, parent))
+    row.addWidget(q)
+    v.addLayout(row)
+    v.addWidget(_hint(hint))
+    return box
 
 
 def _form() -> QFormLayout:
@@ -140,10 +161,16 @@ class SettingsDialog(QDialog):
         self.language.setCurrentIndex(max(0, self.language.findData(
             self.cfg.get("general", "language", "en"))))
         form.addRow(tr("gui.settings.language"), self.language)
-        self.jobs = QSpinBox()
-        self.jobs.setRange(0, 64)
-        self.jobs.setSpecialValueText(tr("gui.settings.auto"))
-        self.jobs.setValue(int(self.cfg.get("general", "jobs", 0)))
+        # A list rather than a spin box: every sensible value is visible at once.
+        cores = os.cpu_count() or 4
+        self.jobs = QComboBox()
+        self.jobs.addItem(tr("gui.settings.auto_cores", cores=cores), 0)
+        for n in range(1, cores + 1):
+            self.jobs.addItem(str(n), n)
+        current = int(self.cfg.get("general", "jobs", 0))
+        if current > cores:
+            self.jobs.addItem(str(current), current)
+        self.jobs.setCurrentIndex(max(0, self.jobs.findData(current)))
         form.addRow(tr("gui.settings.workers"), self.jobs)
         lay.addLayout(form)
         lay.addWidget(_hint(tr("gui.settings.general.hint")))
@@ -191,17 +218,22 @@ class SettingsDialog(QDialog):
         for key in ("lenient", "normal", "strict"):
             self.strictness.addItem(tr(f"gui.settings.strict.{key}"), key)
         self.strictness.addItem(tr("gui.settings.strict.custom"), "custom")
-        form.addRow(tr("gui.settings.strictness"), self.strictness)
+        form.addRow(tr("gui.settings.strictness"),
+                    _explained(self.strictness, tr("gui.settings.explain.strictness"),
+                               "settings.selection", self))
         adv = form
         r = self.cfg.section("reject")
         self.fwhm_sigma = self._spin(1.0, 8.0, 0.5, r.get("fwhm_sigma", 3.0))
         self.ecc_max = self._spin(0.2, 0.95, 0.05, r.get("eccentricity_max", 0.6))
         self.stars_frac = self._spin(0.1, 0.95, 0.05, r.get("star_count_fraction", 0.6))
         self.bg_sigma = self._spin(1.0, 10.0, 0.5, r.get("background_sigma", 4.0))
-        adv.addRow(tr("gui.settings.fwhm_sigma"), self.fwhm_sigma)
-        adv.addRow(tr("gui.settings.ecc_max"), self.ecc_max)
-        adv.addRow(tr("gui.settings.stars_frac"), self.stars_frac)
-        adv.addRow(tr("gui.settings.bg_sigma"), self.bg_sigma)
+        for label, widget, key in (("fwhm_sigma", self.fwhm_sigma, "fwhm"),
+                                   ("ecc_max", self.ecc_max, "ecc"),
+                                   ("stars_frac", self.stars_frac, "stars"),
+                                   ("bg_sigma", self.bg_sigma, "sky")):
+            adv.addRow(tr(f"gui.settings.{label}"),
+                       _explained(widget, tr(f"gui.settings.explain.{key}"),
+                                  f"settings.selection.{key}", self))
         lay.addLayout(adv)
         lay.addWidget(_hint(tr("gui.settings.selection.hint")))
         self.cal_analyze = QCheckBox(tr("gui.settings.cal_analyze"))
@@ -408,7 +440,8 @@ class SettingsDialog(QDialog):
         paid = [n for n in ("BlurXTerminator", "NoiseXTerminator", "StarXTerminator")
                 if self.software_boxes[n].isChecked()]
         return {
-            "general": {"language": self.language.currentData(), "jobs": self.jobs.value()},
+            "general": {"language": self.language.currentData(),
+                        "jobs": int(self.jobs.currentData() or 0)},
             "equipment": {"focal_length_mm": self.focal.value(),
                           "pixel_size_um": self.pixel.value()},
             "reject": {"fwhm_sigma": self.fwhm_sigma.value(),

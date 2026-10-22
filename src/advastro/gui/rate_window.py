@@ -1,8 +1,9 @@
-"""Rate my pic: a separate window that judges a finished astrophoto.
+"""Rate my pic: judges a finished astrophoto. A page in the main window's Rate my pic mode.
 
-The main window and its loaded session stay untouched; this window has its own
-picture, workers and export. Layout: the picture with switchable overlays on the
-left, and Verdict / Findings / Improve / Compare / Details tabs on the right.
+It keeps its own picture, workers and export, so switching to the session or the
+calibration frames and back loses nothing. Layout: the picture with switchable
+overlays on the left; Verdict / Findings / Improve / Workflow / Compare / Details tabs
+on the right. The main window puts this page's actions in its toolbar.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QButtonGroup,
+    QComboBox,
     QFileDialog,
     QFrame,
     QGraphicsPixmapItem,
@@ -34,7 +36,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QMainWindow,
     QMenu,
     QMessageBox,
     QPushButton,
@@ -42,26 +43,26 @@ from PySide6.QtWidgets import (
     QSlider,
     QSplitter,
     QTabWidget,
-    QToolBar,
     QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
-from advastro import APP_NAME
 from advastro.config import Config
 from advastro.gui import icons
 from advastro.gui.advice_panels import _clear, _label, _scroll
-from advastro.gui.help_window import add_help_shortcut, show_help
+from advastro.gui.help_window import show_help
 from advastro.gui.theme import DARK, Theme
 from advastro.gui.widgets import ElidedLabel, PreviewView
 from advastro.help import finding_topic
 from advastro.i18n import tr
+from advastro.rate.objects import CHOICES
 from advastro.rate.picture import SUPPORTED
 from advastro.rate.sky import GAIA_CREDIT, survey_credit
 
 PREVIEW_MAX = 2400
 OVERLAYS = ("none", "stars", "background", "noise", "cast", "clipping", "problems")
+TABS = ("verdict", "findings", "improve", "workflow", "compare", "details")
 
 
 # ============================================================================ workers
@@ -70,9 +71,9 @@ class RateWorker(QObject):
     finished = Signal(object, object, float)     # Rating, preview QImage, seconds
     failed = Signal(str)
 
-    def __init__(self, path: Path, cfg: Config) -> None:
+    def __init__(self, path: Path, cfg: Config, judge_args: dict | None = None) -> None:
         super().__init__()
-        self.path, self.cfg = path, cfg
+        self.path, self.cfg, self.judge_args = path, cfg, judge_args or {}
 
     def run(self) -> None:
         from advastro.rate.judge import judge
@@ -84,7 +85,7 @@ class RateWorker(QObject):
             self.progress.emit("load")
             pic = load_picture(self.path)
             m = measure(pic, progress=self.progress.emit)
-            rating = judge(pic, m, self.cfg.section("profile"))
+            rating = judge(pic, m, self.cfg.section("profile"), **self.judge_args)
             from advastro.rate.pdf import preview_array
 
             arr = preview_array(rating, PREVIEW_MAX)
@@ -101,9 +102,11 @@ class SkyWorker(QObject):
     finished = Signal(object)                    # new Rating with sky
     failed = Signal(str)
 
-    def __init__(self, rating, cfg: Config, hint: str | None) -> None:
+    def __init__(self, rating, cfg: Config, hint: str | None,
+                 judge_args: dict | None = None) -> None:
         super().__init__()
         self.rating, self.cfg, self.hint = rating, cfg, hint
+        self.judge_args = judge_args or {}
 
     def run(self) -> None:
         from advastro.rate.judge import judge
@@ -115,7 +118,7 @@ class SkyWorker(QObject):
                              want_survey=bool(self.cfg.get("compare", "survey", True)),
                              progress=self.progress.emit)
             self.finished.emit(judge(r.picture, r.measurements, self.cfg.section("profile"),
-                                     sky))
+                                     sky, **self.judge_args))
         except Exception as exc:
             self.failed.emit(str(exc))
 
@@ -389,12 +392,15 @@ def render_overlay(kind: str, r, w: int, h: int, theme: Theme) -> QImage | None:
     return out
 
 
-# ============================================================================ window
-class RateWindow(QMainWindow):
-    """Load a finished picture and get a verdict, a plan and comparisons."""
+# ============================================================================ page
+class RatePage(QWidget):
+    """Load a finished picture and get a verdict, a plan, a workflow and comparisons."""
+
+    statusChanged = Signal()          # busy / rated state changed (the host updates actions)
+    message = Signal(str)             # progress and results, for the host's status bar
 
     def __init__(self, cfg: Config, theme: Theme, parent=None) -> None:
-        super().__init__(parent, Qt.WindowType.Window)
+        super().__init__(parent)
         self.cfg, self.theme = cfg, theme
         self.rating = None
         self.preview_image: QImage | None = None
@@ -407,10 +413,6 @@ class RateWindow(QMainWindow):
         self._ab_worker = None
         self.tool = "pixinsight"
         self.overlay = "none"
-        self.setWindowTitle(f"{tr('rate.title')} — {APP_NAME}")
-        self.setWindowIcon(icons.app_icon())
-        self.setAcceptDrops(True)
-        self.resize(1440, 900)
         self._build()
         self.set_theme(theme)
         self._blink = QTimer(self)
@@ -418,64 +420,57 @@ class RateWindow(QMainWindow):
         self._blink.timeout.connect(self._blink_step)
 
     # ---- construction ------------------------------------------------------
-    def _build(self) -> None:
-        tb = QToolBar()
-        tb.setMovable(False)
-        tb.setIconSize(QSize(18, 18))
-        tb.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        tb.setContextMenuPolicy(Qt.ContextMenuPolicy.PreventContextMenu)
-        self.addToolBar(tb)
+    def _build_actions(self) -> None:
+        """Actions and widgets the main window shows in its toolbar in this mode."""
         self.act_open = QAction(tr("rate.open"), self)
         self.act_open.setShortcut(QKeySequence.StandardKey.Open)
+        self.act_open.setShortcutContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
         self.act_open.setToolTip(tr("rate.open_tip"))
         self.act_open.triggered.connect(self.choose)
         self.act_again = QAction(tr("rate.again"), self)
         self.act_again.setShortcut(QKeySequence("F5"))
+        self.act_again.setShortcutContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
         self.act_again.triggered.connect(lambda: self.analyze())
         self.act_sky = QAction(tr("rate.sky"), self)
         self.act_sky.setToolTip(tr("rate.sky_tip"))
         self.act_sky.triggered.connect(self.run_sky)
-        tb.addAction(self.act_open)
-        tb.addAction(self.act_again)
-        tb.addAction(self.act_sky)
-        tb.addSeparator()
+        for a in (self.act_open, self.act_again):
+            self.addAction(a)
         self.object_edit = QLineEdit()
         self.object_edit.setPlaceholderText(tr("rate.object_hint"))
         self.object_edit.setToolTip(tr("rate.object_tip"))
-        self.object_edit.setFixedWidth(220)
-        self.object_edit.editingFinished.connect(
-            lambda: self._render_compare() if self.rating is not None else None)
-        tb.addWidget(self.object_edit)
+        self.object_edit.setFixedWidth(200)
+        self.object_edit.editingFinished.connect(self._object_name_changed)
         self.export_menu = QMenu(self)
         self.act_pdf = self.export_menu.addAction(tr("rate.export_pdf"))
         self.act_md = self.export_menu.addAction(tr("rate.export_md"))
         self.act_json = self.export_menu.addAction(tr("rate.export_json"))
+        self.act_wf = self.export_menu.addAction(tr("rate.export_workflow"))
         self.act_pdf.triggered.connect(lambda: self.export("pdf"))
         self.act_md.triggered.connect(lambda: self.export("md"))
         self.act_json.triggered.connect(lambda: self.export("json"))
+        self.act_wf.triggered.connect(lambda: self.export("workflow"))
         self.export_btn = QToolButton()
         self.export_btn.setText(tr("gui.action.export"))
+        self.export_btn.setToolTip(tr("rate.export_tip"))
         self.export_btn.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.export_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.export_btn.setMenu(self.export_menu)
-        tb.addWidget(self.export_btn)
-        spacer = QWidget()
-        spacer.setObjectName("spacer")
-        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        tb.addWidget(spacer)
-        self.act_settings = QAction(tr("gui.action.settings"), self)
-        self.act_settings.setToolTip(tr("rate.settings_tip"))
-        self.act_settings.triggered.connect(self._open_settings)
-        tb.addAction(self.act_settings)
-        self.act_help = QAction(tr("gui.action.help"), self)
-        self.act_help.setToolTip(tr("rate.help_tip"))
-        self.act_help.triggered.connect(lambda: show_help(self.help_topic(), self))
-        tb.addAction(self.act_help)
-        add_help_shortcut(self, self.help_topic)
 
+    def toolbar_items(self) -> list:
+        """What the host toolbar shows for this mode, in order (None = separator)."""
+        return [self.act_open, self.act_again, self.act_sky, None, self.object_edit,
+                self.export_btn]
+
+    def _build(self) -> None:
+        self._build_actions()
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
         split = QSplitter(Qt.Orientation.Horizontal)
         split.setChildrenCollapsible(False)
-        self.setCentralWidget(split)
+        split.setHandleWidth(1)
+        outer.addWidget(split)
+        self.split = split
 
         # Left: the picture and its overlays.
         left = QFrame()
@@ -493,7 +488,29 @@ class RateWindow(QMainWindow):
         self.info.setObjectName("statLabel")
         tv.addWidget(self.name)
         tv.addWidget(self.info)
+        self.detected = _label("", "statLabel", wrap=False)
+        tv.addWidget(self.detected)
         head.addLayout(tv, 1)
+        # What kind of picture: object type and starless, detected or chosen.
+        kinds = QGridLayout()
+        kinds.setHorizontalSpacing(8)
+        kinds.setVerticalSpacing(4)
+        self.kind_combo = QComboBox()
+        for key in CHOICES:
+            self.kind_combo.addItem(tr(f"rate.kind.{key}"), key)
+        self.kind_combo.setToolTip(tr("rate.kind_tip"))
+        self.kind_combo.currentIndexChanged.connect(self._context_changed)
+        self.stars_combo = QComboBox()
+        for key in ("auto", "yes", "no"):
+            self.stars_combo.addItem(tr(f"rate.starless.{key}"), key)
+        self.stars_combo.setToolTip(tr("rate.starless_tip"))
+        self.stars_combo.currentIndexChanged.connect(self._context_changed)
+        kinds.addWidget(_label(tr("rate.kind_label"), "statLabel"), 0, 0)
+        kinds.addWidget(self.kind_combo, 0, 1)
+        kinds.addWidget(_label(tr("rate.starless_label"), "statLabel"), 0, 2)
+        kinds.addWidget(self.stars_combo, 0, 3)
+        head.addLayout(kinds)
+        head.setAlignment(kinds, Qt.AlignmentFlag.AlignTop)
         lv.addLayout(head)
         chips = QHBoxLayout()
         chips.setContentsMargins(14, 0, 12, 8)
@@ -528,52 +545,51 @@ class RateWindow(QMainWindow):
         self.status.setObjectName("statLabel")
         self.status.setContentsMargins(16, 6, 16, 8)
         lv.addWidget(self.status)
+        self.last_message = ""
         split.addWidget(left)
 
         # Right: tabs.
         self.tabs = QTabWidget()
         self.tabs.setDocumentMode(True)
-        self.verdict_tab = QWidget()
-        self.findings_tab = QWidget()
-        self.improve_tab = QWidget()
-        self.compare_tab = QWidget()
-        self.details_tab = QWidget()
-        for w, key in ((self.verdict_tab, "verdict"), (self.findings_tab, "findings"),
-                       (self.improve_tab, "improve"), (self.compare_tab, "compare"),
-                       (self.details_tab, "details")):
+        self.tool_groups = {}
+        for key in TABS:
+            w = QWidget()
             lay = QVBoxLayout(w)
             lay.setContentsMargins(0, 0, 0, 0)
             inner = QWidget()
             v = QVBoxLayout(inner)
             v.setContentsMargins(18, 14, 18, 16)
             v.setSpacing(10)
-            if key == "improve":
+            if key in ("improve", "workflow"):
                 bar = QHBoxLayout()
                 bar.setContentsMargins(18, 10, 14, 0)
-                self.tool_group = QButtonGroup(self)
-                self.tool_buttons = {}
+                group = QButtonGroup(self)
+                buttons = {}
                 for t in ("pixinsight", "siril"):
                     b = QPushButton({"pixinsight": "PixInsight", "siril": "Siril"}[t])
                     b.setObjectName("chip")
                     b.setCheckable(True)
                     b.clicked.connect(lambda _=False, k=t: self.set_tool(k))
-                    self.tool_group.addButton(b)
-                    self.tool_buttons[t] = b
+                    group.addButton(b)
+                    buttons[t] = b
                     bar.addWidget(b)
                 bar.addStretch(1)
-                self.copy_btn = QPushButton(tr("gui.workflow.copy"))
-                self.copy_btn.setObjectName("link")
-                self.copy_btn.clicked.connect(self.copy_plan)
-                bar.addWidget(self.copy_btn)
+                copy = QPushButton(tr("gui.workflow.copy"))
+                copy.setObjectName("link")
+                copy.clicked.connect(lambda _=False, k=key: self.copy_text(k))
+                bar.addWidget(copy)
                 lay.addLayout(bar)
+                self.tool_groups[key] = (group, buttons, copy)
             lay.addWidget(_scroll(inner), 1)
             setattr(self, f"{key}_lay", v)
             self.tabs.addTab(w, tr(f"rate.tab.{key}"))
+        self.tool_buttons = self.tool_groups["improve"][1]
+        self.copy_btn = self.tool_groups["improve"][2]
         split.addWidget(self.tabs)
         split.setStretchFactor(0, 3)
         split.setStretchFactor(1, 2)
         split.setSizes([860, 560])
-        for key in ("verdict", "findings", "improve", "compare", "details"):
+        for key in TABS:
             self._message(getattr(self, f"{key}_lay"), tr("rate.waiting"))
         self._update_actions()
 
@@ -590,7 +606,7 @@ class RateWindow(QMainWindow):
         for act, name in ((self.act_open, "image"), (self.act_again, "analyze"),
                           (self.act_sky, "solve"), (self.act_pdf, "export"),
                           (self.act_md, "list"), (self.act_json, "code"),
-                          (self.act_settings, "settings"), (self.act_help, "help")):
+                          (self.act_wf, "list")):
             act.setIcon(icons.icon(name, t.text, t.faint))
         self.export_btn.setIcon(icons.icon("export", t.text, t.faint))
         self.view.theme = t
@@ -601,13 +617,16 @@ class RateWindow(QMainWindow):
     def help_topic(self) -> str:
         if self.rating is None:
             return "rate"
-        return ("rate.verdict", "rate.findings", "rate.improve", "rate.compare",
-                "rate.details")[max(0, self.tabs.currentIndex())]
+        return f"rate.{TABS[max(0, self.tabs.currentIndex())]}"
 
-    def _open_settings(self) -> None:
-        parent = self.parent()
-        if parent is not None and hasattr(parent, "open_settings"):
-            parent.open_settings("compare")
+    def _status(self, text: str) -> None:
+        self.last_message = text
+        self.status.setText(text)
+        self.message.emit(text)
+
+    @property
+    def busy(self) -> bool:
+        return self._worker is not None
 
     def _update_actions(self) -> None:
         busy = self._worker is not None
@@ -616,6 +635,44 @@ class RateWindow(QMainWindow):
         self.act_sky.setEnabled(has and not busy and self._sky_worker is None)
         self.export_btn.setEnabled(has and not busy)
         self.act_open.setEnabled(not busy)
+        self.kind_combo.setEnabled(not busy)
+        self.stars_combo.setEnabled(not busy)
+        self.statusChanged.emit()
+
+    # ---- what kind of picture -------------------------------------------------
+    def judge_args(self) -> dict:
+        return {"object_kind": self.kind_combo.currentData() or "auto",
+                "starless": self.stars_combo.currentData() or "auto",
+                "object_name": self.object_edit.text().strip() or None}
+
+    def _context_changed(self) -> None:
+        if self.rating is not None and self._worker is None:
+            self.rejudge()
+
+    def _object_name_changed(self) -> None:
+        if self.rating is None:
+            return
+        if self.rating.sky is None or self.rating.sky.field is None:
+            self.rejudge()          # the name may tell the object type
+        else:
+            self._render_compare()
+
+    def _show_context(self) -> None:
+        r = self.rating
+        if r is None:
+            self.detected.setText("")
+            return
+        c = r.context
+        parts = []
+        if c.kind != "unknown":
+            src = tr(f"rate.kind_source.{c.kind_source}") if c.kind_source != "manual" else ""
+            parts.append(tr(f"rate.kind.{c.kind}") + (f" ({src})" if src else ""))
+        else:
+            parts.append(tr("rate.kind_unknown"))
+        if c.starless:
+            parts.append(tr("rate.starless_detected") if c.starless_source == "auto"
+                         else tr("rate.starless.yes"))
+        self.detected.setText(tr("rate.judged_for", what=" · ".join(parts)))
 
     # ---- loading ------------------------------------------------------------
     def choose(self) -> None:
@@ -626,14 +683,6 @@ class RateWindow(QMainWindow):
         if path:
             self.open_picture(Path(path))
 
-    def dragEnterEvent(self, event) -> None:
-        urls = event.mimeData().urls()
-        if urls and Path(urls[0].toLocalFile()).suffix.lower() in SUPPORTED:
-            event.acceptProposedAction()
-
-    def dropEvent(self, event) -> None:
-        self.open_picture(Path(event.mimeData().urls()[0].toLocalFile()))
-
     def open_picture(self, path: Path) -> None:
         if self._worker is not None:
             return
@@ -641,6 +690,10 @@ class RateWindow(QMainWindow):
         self.name.setText(path.name)
         self.info.setText(str(path.parent))
         self.object_edit.setText("")
+        for combo in (self.kind_combo, self.stars_combo):   # a new picture starts on Auto
+            combo.blockSignals(True)
+            combo.setCurrentIndex(0)
+            combo.blockSignals(False)
         self.analyze()
 
     def analyze(self) -> None:
@@ -650,14 +703,14 @@ class RateWindow(QMainWindow):
         self._ab_results = None
         self.survey_item.setPixmap(QPixmap())
         self.overlay_item.setPixmap(QPixmap())
-        for key in ("verdict", "findings", "improve", "compare", "details"):
+        for key in TABS:
             self._message(getattr(self, f"{key}_lay"), tr("rate.analyzing"))
-        self.status.setText(tr("rate.step.load"))
+        self._status(tr("rate.step.load"))
         self._thread = QThread(self)
-        self._worker = RateWorker(self.path, self.cfg)
+        self._worker = RateWorker(self.path, self.cfg, self.judge_args())
         self._worker.moveToThread(self._thread)
         self._thread.started.connect(self._worker.run)
-        self._worker.progress.connect(lambda s: self.status.setText(tr(f"rate.step.{s}")))
+        self._worker.progress.connect(lambda s: self._status(tr(f"rate.step.{s}")))
         self._worker.finished.connect(self._on_rated)
         self._worker.failed.connect(self._on_failed)
         self._worker.finished.connect(self._thread.quit)
@@ -675,8 +728,8 @@ class RateWindow(QMainWindow):
         self._update_actions()
 
     def _on_failed(self, message: str) -> None:
-        self.status.setText(tr("rate.failed"))
-        for key in ("verdict", "findings", "improve", "compare", "details"):
+        self._status(tr("rate.failed"))
+        for key in TABS:
             self._message(getattr(self, f"{key}_lay"), message)
         QMessageBox.warning(self, tr("rate.title"), message)
 
@@ -687,7 +740,7 @@ class RateWindow(QMainWindow):
         p = rating.picture
         self.info.setText(f"{p.width} × {p.height} · {p.format.upper()} {p.bit_depth}"
                           + (f" · {p.software}" if p.software else ""))
-        self.status.setText(tr("rate.done", seconds=f"{seconds:.1f}"))
+        self._status(tr("rate.done", seconds=f"{seconds:.1f}"))
         if not self.object_edit.text() and p.object_name:
             self.object_edit.setText(p.object_name)
         self._render_all()
@@ -700,7 +753,8 @@ class RateWindow(QMainWindow):
         from advastro.rate.judge import judge
 
         r = self.rating
-        self.rating = judge(r.picture, r.measurements, self.cfg.section("profile"), r.sky)
+        self.rating = judge(r.picture, r.measurements, self.cfg.section("profile"), r.sky,
+                            **self.judge_args())
         self._render_all()
 
     # ---- sky checks ------------------------------------------------------------
@@ -709,12 +763,12 @@ class RateWindow(QMainWindow):
             return
         hint = self.object_edit.text().strip() or None
         self._sky_thread = QThread(self)
-        self._sky_worker = SkyWorker(self.rating, self.cfg, hint)
+        self._sky_worker = SkyWorker(self.rating, self.cfg, hint, self.judge_args())
         self._sky_worker.moveToThread(self._sky_thread)
         self._sky_thread.started.connect(self._sky_worker.run)
-        self._sky_worker.progress.connect(lambda s: self.status.setText(tr(f"rate.step.{s}")))
+        self._sky_worker.progress.connect(lambda s: self._status(tr(f"rate.step.{s}")))
         self._sky_worker.finished.connect(self._on_sky)
-        self._sky_worker.failed.connect(lambda msg: self.status.setText(msg))
+        self._sky_worker.failed.connect(lambda msg: self._status(msg))
         self._sky_worker.finished.connect(self._sky_thread.quit)
         self._sky_worker.failed.connect(self._sky_thread.quit)
         self._sky_thread.finished.connect(self._cleanup_sky)
@@ -746,19 +800,21 @@ class RateWindow(QMainWindow):
                                               Qt.TransformationMode.SmoothTransformation))
             self.survey_item.setPixmap(pm)
         if sky is not None and sky.field is not None:
-            self.status.setText(tr("rate.solved", target=t.label if t else "–"))
+            self._status(tr("rate.solved", target=t.label if t else "–"))
         elif sky is not None and "solve" in sky.errors:
             err = sky.errors["solve"]
             key = {"astap_missing": "gui.target.note.astap_missing",
                    "astap_no_database": "gui.target.note.astap_no_database"}.get(err)
-            self.status.setText(tr(key) if key else err)
+            self._status(tr(key) if key else err)
         self._render_all()
 
     # ---- rendering -------------------------------------------------------------
     def _render_all(self) -> None:
+        self._show_context()
         self._render_verdict()
         self._render_findings()
         self._render_improve()
+        self._render_workflow()
         self._render_compare()
         self._render_details()
         self.set_overlay(self.overlay)
@@ -772,7 +828,7 @@ class RateWindow(QMainWindow):
                              self.preview_image.height(), self.theme)
         self.overlay_item.setPixmap(QPixmap.fromImage(img) if img is not None else QPixmap())
         legend = tr(f"rate.overlay_tip.{key}") if key != "none" else ""
-        self.status.setText(legend or self.status.text())
+        self._status(legend or self.last_message)
 
     def _verdict_color(self, verdict: str) -> str:
         t = self.theme
@@ -868,21 +924,69 @@ class RateWindow(QMainWindow):
 
     def set_tool(self, tool: str) -> None:
         self.tool = tool
-        self.tool_buttons[tool].setChecked(True)
+        for _, buttons, _ in self.tool_groups.values():
+            buttons[tool].setChecked(True)
         if self.rating is not None:
             self._render_improve()
+            self._render_workflow()
+
+    def _tools(self) -> list[str]:
+        tools = [s.lower() for s in self.cfg.get("profile", "software", ["PixInsight", "Siril"])
+                 if s.lower() in ("pixinsight", "siril")] or ["pixinsight", "siril"]
+        for _, buttons, copy in self.tool_groups.values():
+            for k, b in buttons.items():
+                b.setVisible(k in tools)
+            copy.setText(tr("gui.workflow.copy"))
+        if self.tool not in tools:
+            self.tool = tools[0]
+        for _, buttons, _ in self.tool_groups.values():
+            buttons[self.tool].setChecked(True)
+        return tools
+
+    @property
+    def tool_name(self) -> str:
+        return {"pixinsight": "PixInsight", "siril": "Siril"}[self.tool]
+
+    def _mask_box(self, key: str) -> QWidget | None:
+        """A 'How to make the mask' box that opens and closes."""
+        from advastro.rate.judge import load_masks
+
+        recipe = load_masks().get(key)
+        if not recipe:
+            return None
+        t = self.theme
+        box = QWidget()
+        v = QVBoxLayout(box)
+        v.setContentsMargins(0, 2, 0, 2)
+        v.setSpacing(4)
+        toggle = QPushButton(f"▸  {tr('rate.mask_how')}: {recipe['title']}")
+        toggle.setObjectName("link")
+        toggle.setCursor(Qt.CursorShape.PointingHandCursor)
+        toggle.setCheckable(True)
+        body = QFrame()
+        body.setObjectName("card")
+        bv = QVBoxLayout(body)
+        bv.setContentsMargins(12, 8, 12, 8)
+        bv.addWidget(_label(recipe.get("what", ""), "muted"))
+        steps = recipe.get(self.tool, [])
+        bv.addWidget(_label("".join(
+            f"<p style='margin:3px 0'><span style='color:{t.accent}'>{i}.</span>&nbsp; "
+            f"{x}</p>" for i, x in enumerate(steps, 1))))
+        body.setVisible(False)
+
+        def flip(on: bool) -> None:
+            body.setVisible(on)
+            toggle.setText(f"{'▾' if on else '▸'}  {tr('rate.mask_how')}: {recipe['title']}")
+
+        toggle.toggled.connect(flip)
+        v.addWidget(toggle, 0, Qt.AlignmentFlag.AlignLeft)
+        v.addWidget(body)
+        return box
 
     def _render_improve(self) -> None:
         r, t, lay = self.rating, self.theme, self.improve_lay
         _clear(lay)
-        tools = [s.lower() for s in self.cfg.get("profile", "software", ["PixInsight", "Siril"])
-                 if s.lower() in ("pixinsight", "siril")] or ["pixinsight", "siril"]
-        for k, b in self.tool_buttons.items():
-            b.setVisible(k in tools)
-        if self.tool not in tools:
-            self.tool = tools[0]
-        self.tool_buttons[self.tool].setChecked(True)
-        self.copy_btn.setText(tr("gui.workflow.copy"))
+        self._tools()
         if not r.plan:
             lay.addWidget(_label(tr("rate.nothing_to_fix")))
             lay.addStretch(1)
@@ -913,12 +1017,15 @@ class RateWindow(QMainWindow):
                 v.addWidget(_label(f"<b>{s.finding.title}</b>"))
                 if s.why:
                     v.addWidget(_label(s.why, "muted"))
-                tool_name = {"pixinsight": "PixInsight", "siril": "Siril"}[self.tool]
-                steps_ = s.steps.get(tool_name)
+                steps_ = s.steps.get(self.tool_name)
                 if steps_:
                     v.addWidget(_label("".join(
                         f"<p style='margin:2px 0'><span style='color:{t.accent}'>{i}.</span>"
                         f"&nbsp; {x}</p>" for i, x in enumerate(steps_, 1))))
+                for key in s.masks:
+                    box = self._mask_box(key)
+                    if box is not None:
+                        v.addWidget(box)
                 h.addLayout(v, 1)
                 lay.addWidget(card)
         if r.capture:
@@ -926,13 +1033,78 @@ class RateWindow(QMainWindow):
             lay.addWidget(_label("<br>".join(f"• {c}" for c in r.capture)))
         lay.addStretch(1)
 
-    def copy_plan(self) -> None:
+    def _workflow(self):
+        from advastro.rate.workflow import target_workflow
+
+        addons = list(self.cfg.get("profile", "paid_addons", []))
+        return target_workflow(self.rating, self.tool_name, addons)
+
+    def _render_workflow(self) -> None:
+        r, t, lay = self.rating, self.theme, self.workflow_lay
+        _clear(lay)
+        self._tools()
+        wf = self._workflow()
+        lay.addWidget(_label(wf.intro, "muted"))
+        about, av = _card(t)
+        av.addWidget(_label(f"<b>{tr(f'rate.kind.{wf.kind}')}</b>"
+                            + (f" · {r.context.name}" if r.context.name else "")))
+        av.addWidget(_label(wf.about, "statLabel"))
+        if wf.kind == "unknown":
+            pick = QPushButton(tr("rate.kind_pick"))
+            pick.setObjectName("link")
+            pick.clicked.connect(lambda: (self.kind_combo.setFocus(),
+                                          self.kind_combo.showPopup()))
+            av.addWidget(pick, 0, Qt.AlignmentFlag.AlignLeft)
+        lay.addWidget(about)
+        phase = None
+        for n, st in enumerate(wf.stages, 1):
+            now = "linear" if st.linear else "stretched"
+            if now != phase:
+                phase = now
+                lay.addWidget(_label(tr(f"rate.wf_phase.{now}").upper(), "section"))
+            card = QFrame()
+            card.setObjectName("step")
+            h = QHBoxLayout(card)
+            h.setContentsMargins(4, 8, 4, 8)
+            h.setSpacing(12)
+            num = QLabel(str(n))
+            num.setObjectName("stepNumber")
+            num.setFixedSize(24, 24)
+            num.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            h.addWidget(num, 0, Qt.AlignmentFlag.AlignTop)
+            v = QVBoxLayout()
+            v.setSpacing(4)
+            v.addWidget(_label(f"<b>{st.title}</b>"))
+            if st.needed_by:
+                v.addWidget(_label(f"<span style='color:{t.warn}'>● {tr('rate.wf_yours')}:"
+                                   f"</span> {', '.join(st.needed_by)}", "statLabel"))
+            v.addWidget(_label(st.explain, "muted"))
+            if st.note:
+                v.addWidget(_label(f"<i>{tr('rate.wf_note')}:</i> {st.note}", "statLabel"))
+            if st.steps:
+                v.addWidget(_label("".join(
+                    f"<p style='margin:2px 0'><span style='color:{t.accent}'>{i}.</span>"
+                    f"&nbsp; {x}</p>" for i, x in enumerate(st.steps, 1))))
+            h.addLayout(v, 1)
+            lay.addWidget(card)
+        lay.addStretch(1)
+
+    def copy_text(self, which: str) -> None:
         if self.rating is None:
             return
-        from advastro.rate.report import to_markdown
+        if which == "workflow":
+            from advastro.rate.workflow import workflow_markdown
 
-        QGuiApplication.clipboard().setText(to_markdown(self.rating, self.tool))
-        self.copy_btn.setText(tr("gui.workflow.copied"))
+            text = workflow_markdown(self._workflow(), self.tool_name)
+        else:
+            from advastro.rate.report import to_markdown
+
+            text = to_markdown(self.rating, self.tool_name)
+        QGuiApplication.clipboard().setText(text)
+        self.tool_groups[which][2].setText(tr("gui.workflow.copied"))
+
+    def copy_plan(self) -> None:
+        self.copy_text("improve")
 
     # ---- compare ----------------------------------------------------------------
     def _target_name(self) -> tuple[str | None, list[str]]:
@@ -1089,7 +1261,7 @@ class RateWindow(QMainWindow):
 
         def fail(msg):
             self._ab_results = []
-            self.status.setText(f"AstroBin: {msg}")
+            self._status(f"AstroBin: {msg}")
             self._render_compare()
 
         self._ab_worker.finished.connect(done)
@@ -1104,7 +1276,7 @@ class RateWindow(QMainWindow):
 
         self._ab_thread.finished.connect(cleanup)
         self._ab_thread.start()
-        self.status.setText(tr("rate.astrobin_loading"))
+        self._status(tr("rate.astrobin_loading"))
 
     def _gallery(self, results) -> QWidget:
         box = QWidget()
@@ -1195,9 +1367,10 @@ class RateWindow(QMainWindow):
             return
         from advastro.rate import report
 
-        ext = {"pdf": "pdf", "md": "md", "json": "json"}[kind]
+        ext = {"pdf": "pdf", "md": "md", "json": "json", "workflow": "md"}[kind]
+        suffix = "workflow" if kind == "workflow" else "rating"
         default = str(self.rating.picture.path.with_name(
-            f"{self.rating.picture.path.stem}_rating.{ext}"))
+            f"{self.rating.picture.path.stem}_{suffix}.{ext}"))
         path, _ = QFileDialog.getSaveFileName(self, tr("gui.dialog.export"), default,
                                               f"*.{ext}")
         if not path:
@@ -1209,6 +1382,11 @@ class RateWindow(QMainWindow):
                 write_pdf(self.rating, path, self.preview_image.scaled(
                     1400, 1400, Qt.AspectRatioMode.KeepAspectRatio,
                     Qt.TransformationMode.SmoothTransformation) if self.preview_image else None)
+            elif kind == "workflow":
+                from advastro.rate.workflow import workflow_markdown
+
+                Path(path).write_text(workflow_markdown(self._workflow(), self.tool_name),
+                                      encoding="utf-8")
             else:
                 text = report.to_markdown(self.rating) if kind == "md" else \
                     report.to_json(self.rating)
@@ -1216,15 +1394,15 @@ class RateWindow(QMainWindow):
         except OSError as exc:
             QMessageBox.warning(self, tr("rate.title"), str(exc))
             return
-        self.status.setText(tr("gui.status.exported", path=path))
+        self._status(tr("gui.status.exported", path=path))
 
-    def closeEvent(self, event) -> None:
+    def shutdown(self) -> None:
+        """Stop background work; the main window calls this when it closes."""
         self._blink.stop()
         for th in (self._thread, self._sky_thread, self._ab_thread):
             if th is not None:
                 th.quit()
                 th.wait(3000)
-        super().closeEvent(event)
 
 
-__all__ = ["RateWindow", "render_overlay"]
+__all__ = ["RatePage", "render_overlay"]

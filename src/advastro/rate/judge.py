@@ -15,6 +15,8 @@ from importlib import resources
 import numpy as np
 
 from advastro.rate.measure import Measurements
+from advastro.rate.objects import WEIGHTS as KIND_WEIGHTS
+from advastro.rate.objects import PictureContext
 from advastro.rate.picture import Picture
 
 CATEGORIES = ("stars", "background", "colour", "detail", "tonality", "presentation", "depth")
@@ -55,6 +57,7 @@ class Step:
     why: str
     steps: dict[str, list[str]]     # tool -> steps
     capture: list[str]
+    masks: list[str] = field(default_factory=list)   # keys into masks.toml
 
 
 @dataclass
@@ -70,6 +73,7 @@ class Rating:
     capture: list[str]
     skill: str
     sky: object | None = None
+    context: PictureContext = field(default_factory=PictureContext)
 
     @property
     def strengths(self) -> list[Finding]:
@@ -102,7 +106,9 @@ def _hue_name(cast) -> tuple[str, str]:
 
 # ------------------------------------------------------------------------------- rules
 def findings_for(m: Measurements, pic: Picture, skill: str = "intermediate",
-                 sky=None) -> list[Finding]:
+                 sky=None, ctx: PictureContext | None = None) -> list[Finding]:
+    ctx = ctx or PictureContext()
+    kind = ctx.kind
     F: list[Finding] = []
 
     def add(id_, cat, sev, title, text, overlay=None, **facts):
@@ -156,9 +162,13 @@ def findings_for(m: Measurements, pic: Picture, skill: str = "intermediate",
         elif m.white_clip_pct < 0.5:
             add("highlights_ok", "tonality", "good", "No burned-out highlights",
                 "Bright areas keep their structure; only star cores reach full white.")
-        if (m.signal_fraction > 0.003 or m.contrast > 0) and not m.linear:
+        # The contrast measure looks at the whole frame. For a small galaxy or planetary
+        # nebula, or a star cluster, that says little about the object itself.
+        contrast_applies = not ctx.small_object and not ctx.star_subject
+        if (m.signal_fraction > 0.003 or m.contrast > 0) and not m.linear and contrast_applies:
             if m.contrast < 0.07:
-                add("low_contrast", "tonality", "major", "Low contrast",
+                add("low_contrast", "tonality", "minor" if ctx.fills_frame else "major",
+                    "Low contrast",
                     f"The brightest parts of the object reach only {_pct(m.contrast)} % above "
                     "the background.", contrast_pct=_pct(m.contrast))
             elif m.contrast < 0.13:
@@ -185,8 +195,13 @@ def findings_for(m: Measurements, pic: Picture, skill: str = "intermediate",
         sides = ["right", "lower right", "bottom", "lower left", "left", "upper left", "top",
                  "upper right"]
         direction = f", brightest towards the {sides[int(((m.gradient_angle + 22.5) % 360) // 45)]}"
-    nebula_rich = m.signal_fraction > 0.25 or m.background_fraction < 0.2
-    if g > 9 or m.plane_pct > 6:
+    nebula_rich = m.signal_fraction > 0.25 or m.background_fraction < 0.2 or ctx.fills_frame
+    if kind == "milkyway" and (g > 5 or m.plane_pct > 3):
+        add("gradient", "background", "info", "Brightness changes across the field",
+            f"The background changes by {g:.1f} %{direction}. In a Milky Way field much of that "
+            "is the Milky Way itself; check that the darkest corners are neutral and even.",
+            "background", gradient_pct=f"{g:.1f}", direction=direction)
+    elif g > 9 or m.plane_pct > 6:
         add("gradient", "background", "minor" if nebula_rich else "major",
             "Uneven background (gradient)",
             f"The background brightness changes by {g:.1f} % of full scale across the "
@@ -265,7 +280,13 @@ def findings_for(m: Measurements, pic: Picture, skill: str = "intermediate",
             hot_pixels=m.hot_pixels)
 
     # --- stars --------------------------------------------------------------------------------
-    if m.star_count >= 15 and m.fwhm:
+    if ctx.starless:
+        add("starless", "presentation", "info", "Judged as a starless image",
+            "Star checks are skipped" + (" (you marked it as starless)."
+                                         if ctx.starless_source == "manual" else
+                                         ": almost no real stars were found.") +
+            " Background, colour, tonality and detail are judged as usual.")
+    elif m.star_count >= 15 and m.fwhm:
         fw = m.fwhm
         diag = math.hypot(m.width, m.height)
         trailed = (m.ellipticity or 0) > 0.3 and (m.orientation_coherence or 0) > 0.35
@@ -290,7 +311,8 @@ def findings_for(m: Measurements, pic: Picture, skill: str = "intermediate",
             add("big_stars", "stars", "major" if m.fwhm_bright / diag > 0.02 else "minor",
                 "Bright stars dominate", f"The brightest stars are {m.fwhm_bright:.0f} pixels "
                 "across.", "stars", fwhm_bright=f"{m.fwhm_bright:.0f}")
-        if m.star_area_pct > 22 and m.star_density > 1500:
+        if m.star_area_pct > 22 and m.star_density > 1500 and kind not in (
+                "milkyway", "cluster", "globular"):
             add("star_dominance", "stars", "minor", "Stars crowd the object",
                 f"Stars cover about {m.star_area_pct:.0f} % of the frame.", "stars",
                 star_area=f"{m.star_area_pct:.0f}")
@@ -311,8 +333,11 @@ def findings_for(m: Measurements, pic: Picture, skill: str = "intermediate",
                 f"centre{shape}.", "stars", corner_pct=f"{(m.corner_ratio - 1) * 100:.0f}",
                 shape=shape, capture_hint=hint)
         elif m.tilt_ratio and m.tilt_ratio > 1.3 and not trailed:
-            add("tilt", "stars", "major" if m.tilt_ratio > 1.5 else "minor", "Possible sensor tilt",
-                f"The sharpest and softest corners differ by {(m.tilt_ratio - 1) * 100:.0f} %.",
+            add("tilt", "stars", "major" if m.tilt_ratio > 1.5 else "minor",
+                "Uneven sharpness between the corners",
+                f"The sharpest and softest corners differ by {(m.tilt_ratio - 1) * 100:.0f} %. "
+                "Sensor tilt is one possible cause; spacing, collimation, flexure and how the "
+                "subs were stacked are others (see Improve).",
                 "stars", tilt_pct=f"{(m.tilt_ratio - 1) * 100:.0f}")
         elif m.corner_ratio and not trailed and not _corner_elongation(m):
             add("flat_field", "stars", "good", "Sharp to the corners",
@@ -336,7 +361,8 @@ def findings_for(m: Measurements, pic: Picture, skill: str = "intermediate",
         if not m.mono:
             if m.color_spread is not None:
                 if m.color_spread < 0.22:
-                    add("star_color", "colour", "minor", "Colourless stars",
+                    add("star_color", "colour", "major" if ctx.star_subject and
+                        m.color_spread < 0.15 else "minor", "Colourless stars",
                         "The stars show little colour variety.", "stars",
                         color_spread=f"{m.color_spread:.2f}")
                 elif m.color_spread > 0.35:
@@ -363,19 +389,23 @@ def findings_for(m: Measurements, pic: Picture, skill: str = "intermediate",
             "Too few stars were found for a star assessment (starless image?).")
 
     # --- colour ----------------------------------------------------------------------------------
-    if not m.mono and m.signal_fraction > 0.003 and not m.linear:
+    colour_applies = not ctx.star_subject
+    # Galaxies have subtle colours; narrowband nebulae (HOO, SHO) are vivid by nature.
+    mut_major, mut_minor = (0.05, 0.08) if kind == "galaxy" else (0.12, 0.22)
+    sat_minor, sat_major = (0.78, 0.9) if kind in ("emission", "planetary") else (0.72, 0.85)
+    if not m.mono and m.signal_fraction > 0.003 and not m.linear and colour_applies:
         s = m.saturation
-        if s < 0.12:
+        if s < mut_major:
             add("muted", "colour", "major", "Almost colourless",
                 f"Median saturation of the object is {_pct(s)} %.", saturation_pct=_pct(s))
-        elif s < 0.22:
+        elif s < mut_minor:
             add("muted", "colour", "minor", "Muted colours",
                 f"Median saturation of the object is {_pct(s)} %.", saturation_pct=_pct(s))
-        elif s > 0.85 or m.saturation_high_pct > 30:
+        elif s > sat_major or m.saturation_high_pct > 30:
             add("oversaturated", "colour", "major", "Oversaturated colours",
                 f"{m.saturation_high_pct:.0f} % of the object is near full saturation.",
                 sat_high=f"{m.saturation_high_pct:.0f}")
-        elif s > 0.72 or m.saturation_high_pct > 10:
+        elif s > sat_minor or m.saturation_high_pct > 10:
             add("oversaturated", "colour", "minor", "Strong saturation",
                 f"{m.saturation_high_pct:.0f} % of the object is near full saturation.",
                 sat_high=f"{m.saturation_high_pct:.0f}")
@@ -388,7 +418,7 @@ def findings_for(m: Measurements, pic: Picture, skill: str = "intermediate",
                 "clipping", channel_clip=f"{m.channel_clip_pct:.1f}")
 
     # --- detail ----------------------------------------------------------------------------
-    if m.detail_ratio is not None and not m.linear:
+    if m.detail_ratio is not None and not m.linear and not ctx.star_subject:
         if m.detail_ratio < 1.6:
             add("low_detail", "detail", "minor", "Little fine detail",
                 "Fine structure barely rises above the noise.",
@@ -422,7 +452,8 @@ def findings_for(m: Measurements, pic: Picture, skill: str = "intermediate",
         add("eight_bit", "presentation", "info", "8-bit file",
             "Fine for sharing; keep a 16- or 32-bit master for printing and reprocessing.")
     cx, cy = m.centroid
-    if m.signal_fraction > 0.01 and math.hypot(cx - 0.5, cy - 0.5) > 0.28:
+    if m.signal_fraction > 0.01 and math.hypot(cx - 0.5, cy - 0.5) > 0.28 and \
+            not ctx.fills_frame and kind != "milkyway":
         side = ("left" if cx < 0.4 else "right" if cx > 0.6 else "") or \
                ("top" if cy < 0.4 else "bottom")
         add("off_centre", "presentation", "info", "Subject sits off-centre",
@@ -458,18 +489,23 @@ def _category_verdict(score: float) -> str:
         "fair" if score >= 55 else "weak"
 
 
-def score(findings: list[Finding], mono: bool, has_sky: bool) -> tuple[dict, int]:
+def score(findings: list[Finding], mono: bool, has_sky: bool,
+          ctx: PictureContext | None = None) -> tuple[dict, int]:
+    ctx = ctx or PictureContext()
+    weights = KIND_WEIGHTS.get(ctx.kind, WEIGHTS)
     cats = {}
     for cat in CATEGORIES:
         if cat == "colour" and mono:
+            continue
+        if cat == "stars" and ctx.starless:
             continue
         if cat == "depth" and not any(f.category == "depth" for f in findings):
             continue
         pts = sum(f.points for f in findings if f.category == cat)
         s = int(round(max(0.0, min(100.0, 100.0 - pts))))
         cats[cat] = CategoryScore(cat, s, _category_verdict(s))
-    total_w = sum(WEIGHTS[c] for c in cats)
-    overall = sum(WEIGHTS[c] * cats[c].score for c in cats) / total_w
+    total_w = sum(weights[c] for c in cats)
+    overall = sum(weights[c] * cats[c].score for c in cats) / total_w
     majors = sum(1 for f in findings if f.severity == "major")
     minors = sum(1 for f in findings if f.severity == "minor")
     # Problems a viewer notices weigh on the whole picture, not only on their category.
@@ -511,13 +547,21 @@ def _load_tips() -> dict:
                          .read_text(encoding="utf-8"))
 
 
+def load_masks() -> dict:
+    """Mask recipes: key -> {title, what, pixinsight: [...], siril: [...]}."""
+    return tomllib.loads(resources.files("advastro.rate").joinpath("masks.toml")
+                         .read_text(encoding="utf-8"))
+
+
 class _Defaults(dict):
     def __missing__(self, key):
         return "?"
 
 
 def plan_for(findings: list[Finding], m: Measurements, tools: list[str],
-             addons: list[str]) -> tuple[list[Step], list[str]]:
+             addons: list[str], kind: str = "unknown") -> tuple[list[Step], list[str]]:
+    """Steps per finding and tool. tips.toml may hold variants: <tool>#<kind> for an object
+    type, <tool>@<add-on> for an add-on, and <tool>@<add-on>#<kind> for both."""
     tips = _load_tips()
     base = _Defaults(sky_pct=_pct(m.sky, 1), noise_pct=_pct(m.noise, 2),
                      fwhm=f"{m.fwhm:.1f}" if m.fwhm else "?",
@@ -533,9 +577,9 @@ def plan_for(findings: list[Finding], m: Measurements, tools: list[str],
         per_tool = {}
         for tool in tools:
             key = tool.lower()
-            chosen = entry.get(key, [])
+            chosen = entry.get(f"{key}#{kind}") or entry.get(key, [])
             for addon in addons:
-                variant = entry.get(f"{key}@{addon}")
+                variant = entry.get(f"{key}@{addon}#{kind}") or entry.get(f"{key}@{addon}")
                 if variant:
                     chosen = variant
                     break
@@ -545,23 +589,33 @@ def plan_for(findings: list[Finding], m: Measurements, tools: list[str],
         for c in cap:
             if c and c not in capture:
                 capture.append(c)
-        steps.append(Step(f, entry.get("why", "").format_map(facts), per_tool, cap))
+        why = entry.get(f"why#{kind}") or entry.get("why", "")
+        steps.append(Step(f, why.format_map(facts), per_tool, cap, list(entry.get("masks", []))))
     return steps, capture
 
 
 # ------------------------------------------------------------------------------- entry
-def judge(pic: Picture, m: Measurements, profile: dict | None = None, sky=None) -> Rating:
+def judge(pic: Picture, m: Measurements, profile: dict | None = None, sky=None,
+          object_kind: str = "auto", starless: str = "auto",
+          object_name: str | None = None) -> Rating:
+    """object_kind: "auto" or one of objects.KINDS; starless: "auto", "yes" or "no"."""
+    from advastro.rate.objects import picture_context
+
     profile = profile or {}
+    ctx = picture_context(m, pic, sky, object_kind, starless, object_name)
     skill = profile.get("skill", "intermediate")
     software = [s for s in profile.get("software", ["PixInsight", "Siril"])
                 if s.lower() in ("pixinsight", "siril")] or ["PixInsight", "Siril"]
     addons = list(profile.get("paid_addons", []))
-    findings = findings_for(m, pic, skill, sky)
+    findings = findings_for(m, pic, skill, sky, ctx)
+    if ctx.starless:      # the Gaia checks need stars
+        findings = [f for f in findings if f.id not in ("color_calibration",
+                                                        "color_calibration_ok", "depth")]
     for f in findings:
         if f.id in ("dark_background", "bright_background", "crushed_black", "linear"):
             f.facts.setdefault("target_sky", TARGET_SKY.get(skill, "8–12"))
-    cats, overall = score(findings, m.mono, sky is not None)
+    cats, overall = score(findings, m.mono, sky is not None, ctx)
     verdict = verdict_for(overall, skill, findings)
-    plan, capture = plan_for(findings, m, software, addons)
+    plan, capture = plan_for(findings, m, software, addons, ctx.kind)
     return Rating(pic, m, findings, cats, overall, verdict, HEADLINES[verdict], plan, capture,
-                  skill, sky)
+                  skill, sky, ctx)

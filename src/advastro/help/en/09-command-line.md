@@ -50,11 +50,15 @@ advastro rate PICTURE [options]
 | `--object NAME` | Object name, helps plate solving |
 | `--tool pixinsight / siril` | Show steps for one program only |
 | `--skill beginner / intermediate / advanced` | Judge at this level |
+| `--type galaxy / emission / reflection / planetary / dark / cluster / globular / milkyway` | Object type (default: from the name or the plate solve) |
+| `--starless auto / yes / no` | Whether the picture is starless (default: detect) |
+| `--workflow` | Print the processing workflow for the object type instead of the rating |
 
 ```
 advastro rate final.tif
 advastro rate final.jpg --sky --object "NGC 7000" --pdf rating.pdf
 advastro rate final.xisf -f markdown --tool siril -o forum-post.md
+advastro rate m31.tif --type galaxy --workflow --tool pixinsight -o m31-workflow.md
 ```
 
 <!-- id: cli.other -->
